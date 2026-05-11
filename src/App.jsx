@@ -107,6 +107,7 @@ export default function App() {
     return <main className="menu">
       <h1>面包小队</h1>
       <section className="storyIntro">
+        <h2>失眠远征委托</h2>
         <p>室友 B 买了根法棍，发现这东西不适合中国人吃，就放在那。室友 A 看它够硬，又网购了一个大列巴，说自己拥有了最利的矛和最硬的盾。</p>
         <p>凌晨一点五十二分，他左手持列巴、右手握法棍，站在床帘前问我要不要和面包骑士一起去冒险。室友 B 说他黄油玩得多，是黄油射手；室友 C 说梦是反的，所以他现在是火腿战士。</p>
         <p>现在是凌晨两点，我想睡觉。坏了，开始传染了。因为我，生菜牧师，也要和伙伴们一起出发去冒险了。</p>
@@ -201,11 +202,13 @@ function wallTileSpec(map, x, y) {
 }
 
 function wallCornerFor(map, x, y) {
-  if (isOpenTile(map, x + 1, y + 1)) return 'nw';
-  if (isOpenTile(map, x - 1, y + 1)) return 'ne';
-  if (isOpenTile(map, x + 1, y - 1)) return 'sw';
-  if (isOpenTile(map, x - 1, y - 1)) return 'se';
-  return null;
+  const corners = [
+    ['nw', x + 1, y + 1, [['north', x + 1, y], ['west', x, y + 1]]],
+    ['ne', x - 1, y + 1, [['north', x - 1, y], ['east', x, y + 1]]],
+    ['sw', x + 1, y - 1, [['south', x + 1, y], ['west', x, y - 1]]],
+    ['se', x - 1, y - 1, [['south', x - 1, y], ['east', x, y - 1]]],
+  ].filter(([, cx, cy, arms]) => isOpenTile(map, cx, cy) && arms.every(([orientation, ax, ay]) => wallOrientationFor(map, ax, ay) === orientation));
+  return corners.length === 1 ? corners[0][0] : null;
 }
 
 function isOpenTile(map, x, y) {

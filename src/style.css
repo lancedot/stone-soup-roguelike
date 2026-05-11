@@ -2,11 +2,15 @@
 body { margin: 0; color: #f2e8d8; background: radial-gradient(circle at 20% 8%, #4b3b30, #18202a 52%, #090b0e); font-family: system-ui, 'Microsoft YaHei', sans-serif; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .62; }
-.menu { max-width: 1120px; margin: 0 auto; padding: 42px 24px; text-align: center; }
+.menu { max-width: 1120px; margin: 0 auto; padding: 34px 24px 42px; text-align: center; }
 h1 { font-size: 56px; margin: 0 0 12px; color: #ffe66d; text-shadow: 0 4px #5a2d1b; }
 .menu p { color: #cbbfa9; line-height: 1.7; }
-.storyIntro { max-width: 880px; margin: 0 auto; }
-.storyIntro p { margin: 8px 0; }
+.storyIntro { position: relative; max-width: 780px; margin: 4px auto 26px; padding: 32px 66px 30px; color: #3a2415; background: linear-gradient(90deg, #9a6632 0 18px, transparent 18px calc(100% - 18px), #9a6632 calc(100% - 18px)), linear-gradient(#f4d79a, #d6a765 48%, #f0cd88); border: 2px solid #70401d; border-radius: 8px; box-shadow: inset 0 0 0 2px #fff1b855, inset 0 18px 28px #fff3, inset 0 -24px 28px #6b371633, 0 14px 0 #0005, 0 22px 40px #0008; text-align: left; }
+.storyIntro::before, .storyIntro::after { content: ""; position: absolute; top: 14px; bottom: 14px; width: 24px; border-radius: 999px; background: linear-gradient(90deg, #6f3d19, #c48943 45%, #5a2d12); box-shadow: inset 0 0 0 2px #2b160b66, 0 3px 8px #0006; }
+.storyIntro::before { left: 18px; }
+.storyIntro::after { right: 18px; transform: scaleX(-1); }
+.storyIntro h2 { margin: 0 0 12px; color: #5a2d12; text-align: center; font-size: 24px; letter-spacing: 0; text-shadow: 0 1px #fff0b0; }
+.storyIntro p { margin: 9px auto 0; max-width: 620px; color: #3a2415; font-size: 15px; line-height: 1.72; text-indent: 2em; }
 .classGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0; }
 .classGrid button { background: #1b2230; color: #eadfcb; border: 2px solid #4a4f42; border-radius: 8px; padding: 14px; min-height: 260px; transition: transform .12s, border-color .12s; }
 .classGrid button:hover, .classGrid .selected { transform: translateY(-3px); border-color: #ffd37a; }
