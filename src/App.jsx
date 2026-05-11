@@ -172,11 +172,11 @@ function VictoryArt({ classId }) {
 
 function Tile({ map, tile, x, y }) {
   if (tile === TILES.wall && !isVisibleWall(map, x, y)) return null;
-  const wallOrientation = tile === TILES.wall ? wallOrientationFor(map, x, y) : null;
-  const tileSprites = wallOrientation ? sprites[`tile_wall_${wallOrientation}`] : tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
-  const variant = tileVariantIndex(x, y, tileSprites.length, map.visualSeed ?? 1);
+  const wallSpec = tile === TILES.wall ? wallTileSpec(map, x, y) : null;
+  const tileSprites = wallSpec?.sprites ?? (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
+  const variant = wallSpec ? wallVariantIndex(wallSpec.orientation, x, y, tileSprites.length, map.visualSeed ?? 1) : tileVariantIndex(x, y, tileSprites.length, map.visualSeed ?? 1);
   const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
-  const transform = tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined;
+  const transform = wallSpec?.transform ?? (tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined);
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
 }
 
@@ -197,12 +197,25 @@ function wallOrientationFor(map, x, y) {
   return 'north';
 }
 
+function wallTileSpec(map, x, y) {
+  const orientation = wallOrientationFor(map, x, y);
+  if (orientation === 'south') return { orientation, sprites: sprites.tile_wall_south };
+  if (orientation === 'west') return { orientation, sprites: sprites.tile_wall_north, transform: 'rotate(-90deg)' };
+  if (orientation === 'east') return { orientation, sprites: sprites.tile_wall_north, transform: 'rotate(90deg)' };
+  return { orientation, sprites: sprites.tile_wall_north };
+}
+
 function isOpenTile(map, x, y) {
   return x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y][x] !== TILES.wall;
 }
 
 function tileVariantIndex(x, y, count, seed) {
   return hashTile(x + Math.floor(y / 2), y + Math.floor(x / 3), seed) % count;
+}
+
+function wallVariantIndex(orientation, x, y, count, seed) {
+  if (orientation === 'west' || orientation === 'east') return 0;
+  return hashTile(x, y, seed + 31) % count;
 }
 
 function floorTransform(x, y, seed) {
