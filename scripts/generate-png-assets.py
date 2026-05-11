@@ -168,7 +168,7 @@ def make_sheet(name: str, drawer, frame_ms=520):
     sheet.save(out, optimize=True)
     return {
         "kind": "sheet",
-        "src": f"/assets/{name}_sheet.png",
+        "src": f"assets/{name}_sheet.png",
         "cols": 4,
         "rows": 4,
         "frameMs": frame_ms,
@@ -180,7 +180,7 @@ def make_static(name: str, drawer, size=(32, 32)):
     drawer(ImageDraw.Draw(im), im)
     out = ASSET_DIR / f"{name}.png"
     im.save(out, optimize=True)
-    return f"/assets/{name}.png"
+    return f"assets/{name}.png"
 
 
 def character_drawer(kind):

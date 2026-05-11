@@ -2,7 +2,6 @@ node_modules/
 dist/
 coverage/
 output/
-public/assets/*.svg
 .DS_Store
 *.log
 .env

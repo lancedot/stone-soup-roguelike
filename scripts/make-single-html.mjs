@@ -17,7 +17,7 @@ html = html.replace(/<link rel="stylesheet" crossorigin href="([^"]+)">/g, (_, h
 });
 
 // Inline every image asset reference used by the app as data URLs.
-html = html.replace(/\/assets\/([A-Za-z0-9_-]+\.(svg|png))/g, (_, file, ext) => {
+html = html.replace(/(?:\.\/)?assets\/([A-Za-z0-9_-]+\.(svg|png))/g, (_, file, ext) => {
   const assetPath = path.join(dist, 'assets', file);
   if (ext === 'svg') {
     const svg = fs.readFileSync(assetPath, 'utf8');
