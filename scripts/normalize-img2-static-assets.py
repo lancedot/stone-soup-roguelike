@@ -55,6 +55,7 @@ WALL_CORNER_NAMES = [
     "tile_wall_corner_se",
 ]
 WALL_CORNER_KEYS = ["nw", "ne", "sw", "se"]
+WALL_CORNER_CAP_SIZE = STATIC_FRAME
 
 
 def remove_key(im: Image.Image, key=(0, 255, 0)) -> Image.Image:
@@ -198,7 +199,7 @@ def build_wall_corners():
             round((col + 1) * cell_w),
             round((row + 1) * cell_h),
         ))
-        tile = compact_corner_cap(normalize_tile(cell, pad=0), WALL_CORNER_KEYS[idx])
+        tile = compact_corner_cap(normalize_tile(cell, pad=0), WALL_CORNER_KEYS[idx], size=WALL_CORNER_CAP_SIZE)
         save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
 
 
