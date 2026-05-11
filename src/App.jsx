@@ -218,7 +218,7 @@ function wallOrientationFor(map, x, y) {
 
 function wallTileSpec(map, x, y) {
   const orientation = wallOrientationFor(map, x, y);
-  if (orientation === 'south') return { orientation, sprites: sprites.tile_wall_south };
+  if (orientation === 'south') return { orientation, sprites: sprites.tile_wall_south, transform: `translateY(${TILE_SIZE / 2}px)` };
   if (orientation === 'west') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(-90deg)' };
   if (orientation === 'east') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(90deg)' };
   if (orientation === 'north') return { orientation, sprites: sprites.tile_wall_north };
