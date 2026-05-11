@@ -36,3 +36,4 @@ Original prompt: Transform https://github.com/lancedot/stone-soup-roguelike into
 - Partial-floor fill pass: wall tiles now render half-tile floor patches under cardinal wall edges and quarter-tile floor patches under corner caps, filling visible gaps without changing collision or map data.
 - Start-story copy pass: replaced the scroll story with the user's BBS-style dungeon thread copy, including per-poster replies and class unlock/status lines.
 - Half-wall refinement: floor patches now draw above the wall tile only on the open side, so bottom/side walls keep their structural half while the missing half is filled with floor. Corner caps were resized to a clean 32px half-grid unit.
+- Wall-layer fix: floor patches were moved back underneath wall art after screenshots showed they could hide thin bottom/side wall tiles. This restores bottom and side walls while preserving partial floor fill where wall art has transparent gaps.
