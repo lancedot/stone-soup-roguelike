@@ -36,6 +36,7 @@ CG_SOURCES = {
 
 TERRAIN_SOURCE = "terrain_variants_img2_raw.png"
 WALL_ORIENTED_SOURCE = "wall_oriented_variants_img2_raw.png"
+WALL_CORNER_SOURCE = "wall_corner_variants_img2_raw.png"
 TERRAIN_ROWS = [
     "tile_floor",
     "tile_wall",
@@ -46,6 +47,12 @@ WALL_ORIENTED_ROWS = [
     "tile_wall_south",
     "tile_wall_west",
     "tile_wall_east",
+]
+WALL_CORNER_NAMES = [
+    "tile_wall_corner_nw",
+    "tile_wall_corner_ne",
+    "tile_wall_corner_sw",
+    "tile_wall_corner_se",
 ]
 
 
@@ -172,6 +179,28 @@ def build_oriented_wall_variants():
             save_png(tile, ASSET_DIR / f"{name}_{col + 1}.png", colors=128)
 
 
+def build_wall_corners():
+    corner_path = SOURCE_DIR / WALL_CORNER_SOURCE
+    if not corner_path.exists():
+        return
+
+    atlas = remove_key(Image.open(corner_path))
+    cols, rows = 2, 2
+    cell_w = atlas.width / cols
+    cell_h = atlas.height / rows
+    for idx, name in enumerate(WALL_CORNER_NAMES):
+        col = idx % cols
+        row = idx // cols
+        cell = atlas.crop((
+            round(col * cell_w),
+            round(row * cell_h),
+            round((col + 1) * cell_w),
+            round((row + 1) * cell_h),
+        ))
+        tile = normalize_tile(cell, pad=0)
+        save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
+
+
 def build_boss():
     boss = remove_key(Image.open(SOURCE_DIR / "enemy_insomnia_lord_img2_raw.png"))
     save_png(normalize_icon(boss, frame_size=96, pad=4), ASSET_DIR / "enemy_insomnia_lord.png", colors=128)
@@ -203,6 +232,7 @@ def main():
     build_static_icons()
     build_terrain_variants()
     build_oriented_wall_variants()
+    build_wall_corners()
     build_boss()
     build_cgs()
     print("normalized img2 static assets")

@@ -233,6 +233,10 @@ test('terrain sprites use four img2 variants for less repetitive dungeon tiling'
     assert.equal(sprites[id].length, 4);
     assert.ok(sprites[id].every((src) => src.endsWith('.png')), `${id} variants should be PNG assets`);
   }
+  for (const id of ['tile_wall_corner_nw', 'tile_wall_corner_ne', 'tile_wall_corner_sw', 'tile_wall_corner_se']) {
+    assert.equal(typeof sprites[id], 'string', `${id} should declare a corner wall PNG`);
+    assert.ok(sprites[id].endsWith('.png'));
+  }
 });
 
 test('successful skills create visible FX while failed skills do not', () => {

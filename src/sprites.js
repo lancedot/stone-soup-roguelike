@@ -119,6 +119,10 @@ export const sprites = {
     "assets/tile_wall_east_3.png",
     "assets/tile_wall_east_4.png"
   ],
+  "tile_wall_corner_nw": "assets/tile_wall_corner_nw.png",
+  "tile_wall_corner_ne": "assets/tile_wall_corner_ne.png",
+  "tile_wall_corner_sw": "assets/tile_wall_corner_sw.png",
+  "tile_wall_corner_se": "assets/tile_wall_corner_se.png",
   "tile_stairs": [
     "assets/tile_stairs_1.png",
     "assets/tile_stairs_2.png",

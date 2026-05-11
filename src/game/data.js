@@ -1,6 +1,6 @@
 export const TILE_SIZE = 64;
-export const MAP_WIDTH = 18;
-export const MAP_HEIGHT = 12;
+export const MAP_WIDTH = 20;
+export const MAP_HEIGHT = 13;
 export const MAX_LOG = 8;
 
 export const TILES = {

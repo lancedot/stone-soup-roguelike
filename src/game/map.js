@@ -4,16 +4,16 @@ import { rectsOverlap } from './utils.js';
 export function makeMap(rng, depth = 1) {
   const tiles = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(TILES.wall));
   const rooms = [];
-  const attempts = 90;
-  const targetRooms = MAP_WIDTH <= 20 ? 5 : 10;
+  const attempts = 140;
+  const targetRooms = MAP_WIDTH <= 20 ? 6 : 10;
 
   for (let i = 0; i < attempts && rooms.length < targetRooms; i++) {
-    const w = rng.int(4, MAP_WIDTH <= 20 ? 7 : 10);
-    const h = rng.int(3, MAP_WIDTH <= 20 ? 5 : 8);
+    const w = rng.int(4, MAP_WIDTH <= 20 ? 8 : 10);
+    const h = rng.int(3, MAP_WIDTH <= 20 ? 6 : 8);
     const x = rng.int(1, MAP_WIDTH - w - 2);
     const y = rng.int(1, MAP_HEIGHT - h - 2);
     const room = { x, y, w, h, cx: Math.floor(x + w / 2), cy: Math.floor(y + h / 2) };
-    if (rooms.some((r) => rectsOverlap({ ...room, x: room.x - 1, y: room.y - 1, w: room.w + 2, h: room.h + 2 }, r))) continue;
+    if (rooms.some((r) => rectsOverlap(room, r))) continue;
     carveRoom(tiles, room);
     if (rooms.length > 0) {
       const prev = rooms[rooms.length - 1];

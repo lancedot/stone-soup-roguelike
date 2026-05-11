@@ -171,22 +171,14 @@ function VictoryArt({ classId }) {
 }
 
 function Tile({ map, tile, x, y }) {
-  if (tile === TILES.wall && !isVisibleWall(map, x, y)) return null;
   const wallSpec = tile === TILES.wall ? wallTileSpec(map, x, y) : null;
+  if (tile === TILES.wall && !wallSpec) return null;
   const tileSprites = wallSpec?.sprites ?? (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
-  const variant = wallSpec ? wallVariantIndex(wallSpec.orientation, x, y, tileSprites.length, map.visualSeed ?? 1) : tileVariantIndex(x, y, tileSprites.length, map.visualSeed ?? 1);
+  const spriteCount = Array.isArray(tileSprites) ? tileSprites.length : 1;
+  const variant = wallSpec ? wallVariantIndex(wallSpec.orientation, x, y, spriteCount, map.visualSeed ?? 1) : tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
   const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
   const transform = wallSpec?.transform ?? (tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined);
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
-}
-
-function isVisibleWall(map, x, y) {
-  const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  return neighbors.some(([dx, dy]) => {
-    const nx = x + dx;
-    const ny = y + dy;
-    return nx >= 0 && ny >= 0 && nx < map.width && ny < map.height && map.tiles[ny][nx] !== TILES.wall;
-  });
 }
 
 function wallOrientationFor(map, x, y) {
@@ -194,15 +186,26 @@ function wallOrientationFor(map, x, y) {
   if (isOpenTile(map, x, y - 1)) return 'south';
   if (isOpenTile(map, x + 1, y)) return 'west';
   if (isOpenTile(map, x - 1, y)) return 'east';
-  return 'north';
+  return null;
 }
 
 function wallTileSpec(map, x, y) {
   const orientation = wallOrientationFor(map, x, y);
   if (orientation === 'south') return { orientation, sprites: sprites.tile_wall_south };
-  if (orientation === 'west') return { orientation, sprites: sprites.tile_wall_north, transform: 'rotate(-90deg)' };
-  if (orientation === 'east') return { orientation, sprites: sprites.tile_wall_north, transform: 'rotate(90deg)' };
-  return { orientation, sprites: sprites.tile_wall_north };
+  if (orientation === 'west') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(-90deg)' };
+  if (orientation === 'east') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(90deg)' };
+  if (orientation === 'north') return { orientation, sprites: sprites.tile_wall_north };
+  const corner = wallCornerFor(map, x, y);
+  if (corner) return { orientation: `corner_${corner}`, sprites: sprites[`tile_wall_corner_${corner}`] };
+  return null;
+}
+
+function wallCornerFor(map, x, y) {
+  if (isOpenTile(map, x + 1, y + 1)) return 'nw';
+  if (isOpenTile(map, x - 1, y + 1)) return 'ne';
+  if (isOpenTile(map, x + 1, y - 1)) return 'sw';
+  if (isOpenTile(map, x - 1, y - 1)) return 'se';
+  return null;
 }
 
 function isOpenTile(map, x, y) {
