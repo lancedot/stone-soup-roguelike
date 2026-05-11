@@ -4,13 +4,8 @@ import path from 'node:path';
 const root = process.cwd();
 const dist = path.join(root, 'dist');
 const out = path.join(root, 'bread-squad-single.html');
-let html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-
-// The root page uses a GitHub Pages redirect fallback. The standalone build is
-// the target of that redirect, so strip the fallback to avoid self-refreshing.
-html = html.replace(/\s*<meta http-equiv="refresh" content="0; url=\.\/bread-squad-single\.html">/, '');
-html = html.replace(/\s*<script>\s*if \(location\.hostname\.endsWith\('github\.io'\)\) \{\s*location\.replace\(new URL\('\.\/bread-squad-single\.html', location\.href\)\);\s*\}\s*<\/script>/, '');
-html = html.replace(/\s*<p><a href="\.\/bread-squad-single\.html">Open Bread Squad Roguelike<\/a><\/p>/, '');
+const indexOut = path.join(root, 'index.html');
+let html = fs.readFileSync(path.join(dist, 'dev.html'), 'utf8');
 
 html = html.replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/g, (_, src) => {
   const js = fs.readFileSync(path.join(dist, src.replace(/^\//, '')), 'utf8');
@@ -35,5 +30,6 @@ html = html.replace(/(?:\.\/)?assets\/([A-Za-z0-9_-]+\.(svg|png))/g, (_, file, e
 
 html = html.replace('</head>', `<meta name="description" content="面包小队：可分享的单文件小体量肉鸽游戏，所有素材已内联。">\n</head>`);
 fs.writeFileSync(out, html);
+fs.writeFileSync(indexOut, html);
 const sizeKb = (fs.statSync(out).size / 1024).toFixed(1);
-console.log(`${out}\n${sizeKb} KB`);
+console.log(`${out}\n${indexOut}\n${sizeKb} KB`);

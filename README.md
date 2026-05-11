@@ -10,6 +10,7 @@ npm run start
 ```
 
 浏览器打开 Vite 显示的地址，通常是 `http://localhost:5173`。
+如果需要开发模式的热更新入口，打开 `http://localhost:5173/dev.html`。
 
 ## 操作
 
@@ -45,7 +46,7 @@ npm run start
 npm test                         # 运行核心逻辑测试
 node scripts/generate-assets.mjs # 重新生成 PNG 动画素材和 src/sprites.js
 npm run build                    # 生产构建
-node scripts/make-single-html.mjs# 生成可分享单文件 HTML
+node scripts/make-single-html.mjs# 生成可分享单文件 HTML，并把根目录 index.html 更新为 Pages 可直接打开的版本
 npm run start                    # 启动开发服务器
 ```
 
