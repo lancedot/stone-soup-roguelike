@@ -34,7 +34,7 @@ jobs:
       - name: Build single-file page
         run: node scripts/make-single-html.mjs
       - name: Copy single-file page
-        run: cp "面包小队-单文件版.html" dist/
+        run: cp bread-squad-single.html dist/
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

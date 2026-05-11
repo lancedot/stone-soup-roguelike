@@ -3,7 +3,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const dist = path.join(root, 'dist');
-const out = path.join(root, '面包小队-单文件版.html');
+const out = path.join(root, 'bread-squad-single.html');
 let html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 
 html = html.replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/g, (_, src) => {
