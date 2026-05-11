@@ -192,39 +192,58 @@ function VictoryArt({ classId }) {
 function Tile({ map, tile, x, y }) {
   const wallSpec = tile === TILES.wall ? wallTileSpec(map, x, y) : null;
   if (tile === TILES.wall && !wallSpec) return null;
-  const tileSprites = wallSpec?.sprites ?? (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
+  const tileSprites = wallSpec?.type === 'corner' ? wallSpec.sprites : (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
   const spriteCount = Array.isArray(tileSprites) ? tileSprites.length : 1;
-  const variant = wallSpec ? wallVariantIndex(wallSpec.orientation, x, y, spriteCount, map.visualSeed ?? 1) : tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
+  const variant = wallSpec?.type === 'corner' ? wallVariantIndex(wallSpec.orientation, x, y, spriteCount, map.visualSeed ?? 1) : tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
   const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
-  const transform = wallSpec?.transform ?? (tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined);
+  const transform = tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined;
   if (wallSpec) {
     const floorSprites = sprites.tile_floor;
     const floorSrc = floorSprites[tileVariantIndex(x, y, floorSprites.length, map.visualSeed ?? 1)];
     return <div className="tile tileComposite" style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }}>
-      {floorFillRects(wallSpec.orientation).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
-      <img className="wallLayer" src={src} alt={tile} style={{ transform }} />
+      {floorFillRects(wallSpec).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
+      {wallSpec.type === 'edges'
+        ? wallSpec.edges.map((edge) => {
+          const edgeSprites = wallSpritesFor(edge);
+          const edgeSrc = edgeSprites[wallVariantIndex(edge, x, y, edgeSprites.length, map.visualSeed ?? 1)];
+          return <img key={edge} className={`wallLayer wallLayer-${edge}`} src={edgeSrc} alt={tile} style={{ transform: wallTransformFor(edge) }} />;
+        })
+        : <img className="wallLayer" src={src} alt={tile} />}
     </div>;
   }
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
 }
 
 function wallOrientationFor(map, x, y) {
-  if (isOpenTile(map, x, y + 1)) return 'north';
-  if (isOpenTile(map, x, y - 1)) return 'south';
-  if (isOpenTile(map, x + 1, y)) return 'west';
-  if (isOpenTile(map, x - 1, y)) return 'east';
-  return null;
+  return cardinalWallEdges(map, x, y)[0] ?? null;
 }
 
 function wallTileSpec(map, x, y) {
-  const orientation = wallOrientationFor(map, x, y);
-  if (orientation === 'south') return { orientation, sprites: sprites.tile_wall_south, transform: `translateY(${TILE_SIZE / 2}px)` };
-  if (orientation === 'west') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(-90deg)' };
-  if (orientation === 'east') return { orientation, sprites: sprites.tile_wall_south, transform: 'rotate(90deg)' };
-  if (orientation === 'north') return { orientation, sprites: sprites.tile_wall_north };
+  const edges = cardinalWallEdges(map, x, y);
+  if (edges.length) return { type: 'edges', edges };
   const corner = wallCornerFor(map, x, y);
-  if (corner) return { orientation: `corner_${corner}`, sprites: sprites[`tile_wall_corner_${corner}`] };
+  if (corner) return { type: 'corner', orientation: `corner_${corner}`, sprites: sprites[`tile_wall_corner_${corner}`] };
   return null;
+}
+
+function cardinalWallEdges(map, x, y) {
+  return [
+    ['north', x, y + 1],
+    ['south', x, y - 1],
+    ['west', x + 1, y],
+    ['east', x - 1, y],
+  ].filter(([, ox, oy]) => isOpenTile(map, ox, oy)).map(([orientation]) => orientation);
+}
+
+function wallSpritesFor(orientation) {
+  return orientation === 'north' ? sprites.tile_wall_north : sprites.tile_wall_south;
+}
+
+function wallTransformFor(orientation) {
+  if (orientation === 'south') return `translateY(${TILE_SIZE / 2}px)`;
+  if (orientation === 'west') return 'rotate(-90deg)';
+  if (orientation === 'east') return 'rotate(90deg)';
+  return undefined;
 }
 
 function wallCornerFor(map, x, y) {
@@ -233,7 +252,7 @@ function wallCornerFor(map, x, y) {
     ['ne', x - 1, y + 1, [['north', x - 1, y], ['east', x, y + 1]]],
     ['sw', x + 1, y - 1, [['south', x + 1, y], ['west', x, y - 1]]],
     ['se', x - 1, y - 1, [['south', x - 1, y], ['east', x, y - 1]]],
-  ].filter(([, cx, cy, arms]) => isOpenTile(map, cx, cy) && arms.every(([orientation, ax, ay]) => wallOrientationFor(map, ax, ay) === orientation));
+  ].filter(([, cx, cy, arms]) => isOpenTile(map, cx, cy) && arms.every(([orientation, ax, ay]) => cardinalWallEdges(map, ax, ay).includes(orientation)));
   return corners.length === 1 ? corners[0][0] : null;
 }
 
@@ -250,7 +269,7 @@ function wallVariantIndex(orientation, x, y, count, seed) {
   return hashTile(x, y, seed + 31) % count;
 }
 
-function floorFillRects(orientation) {
+function floorFillRects(wallSpec) {
   const half = TILE_SIZE / 2;
   const cardinal = {
     north: [{ x: 0, y: half, w: TILE_SIZE, h: half }],
@@ -264,7 +283,20 @@ function floorFillRects(orientation) {
     corner_sw: [{ x: half, y: 0, w: half, h: half }],
     corner_se: [{ x: 0, y: 0, w: half, h: half }],
   };
-  return cardinal[orientation] ?? corners[orientation] ?? [];
+  const rects = wallSpec.type === 'edges'
+    ? wallSpec.edges.flatMap((edge) => cardinal[edge])
+    : corners[wallSpec.orientation] ?? [];
+  return uniqueRects(rects);
+}
+
+function uniqueRects(rects) {
+  const seen = new Set();
+  return rects.filter((rect) => {
+    const key = `${rect.x},${rect.y},${rect.w},${rect.h}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function floorTransform(x, y, seed) {
