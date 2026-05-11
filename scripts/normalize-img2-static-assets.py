@@ -202,7 +202,7 @@ def build_wall_corners():
         save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
 
 
-def compact_corner_cap(tile: Image.Image, corner: str, size=26) -> Image.Image:
+def compact_corner_cap(tile: Image.Image, corner: str, size=32) -> Image.Image:
     tile = tile.convert("RGBA")
     out = Image.new("RGBA", tile.size, (0, 0, 0, 0))
     w, h = tile.size

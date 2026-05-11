@@ -201,8 +201,8 @@ function Tile({ map, tile, x, y }) {
     const floorSprites = sprites.tile_floor;
     const floorSrc = floorSprites[tileVariantIndex(x, y, floorSprites.length, map.visualSeed ?? 1)];
     return <div className="tile tileComposite" style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }}>
-      {floorFillRects(wallSpec.orientation).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
       <img className="wallLayer" src={src} alt={tile} style={{ transform }} />
+      {floorFillRects(wallSpec.orientation).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
     </div>;
   }
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
