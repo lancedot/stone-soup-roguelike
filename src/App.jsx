@@ -107,10 +107,28 @@ export default function App() {
     return <main className="menu">
       <h1>面包小队</h1>
       <section className="storyIntro">
-        <h2>失眠远征委托</h2>
-        <p>室友 B 买了根法棍，发现这东西不适合中国人吃，就放在那。室友 A 看它够硬，又网购了一个大列巴，说自己拥有了最利的矛和最硬的盾。</p>
-        <p>凌晨一点五十二分，他左手持列巴、右手握法棍，站在床帘前问我要不要和面包骑士一起去冒险。室友 B 说他黄油玩得多，是黄油射手；室友 C 说梦是反的，所以他现在是火腿战士。</p>
-        <p>现在是凌晨两点，我想睡觉。坏了，开始传染了。因为我，生菜牧师，也要和伙伴们一起出发去冒险了。</p>
+        <h2>[ 副本名称：失眠远征委托 ]</h2>
+        <article>
+          <b>&gt;&gt; (楼主)</b>
+          <p>这一切要从室友 A 买了根法棍开始。他左手拿列巴，右手执法棍，站在我们床前问：“勇士，要一起去冒险吗？”</p>
+          <em>[ 面包骑士 ] 已解锁。</em>
+        </article>
+        <article>
+          <b>&gt;&gt; (室友 B)</b>
+          <p>“黄油玩得多的我，当然是黄油射手啦！”</p>
+          <em>[ 黄油射手 ] 已入队。</em>
+        </article>
+        <article>
+          <b>&gt;&gt; (室友 C)</b>
+          <p>“梦里我是水手战士，梦是反的，所以我现在是火腿战士。”</p>
+          <em>[ 火腿战士 ] 已入队。</em>
+        </article>
+        <article>
+          <b>&gt;&gt; (楼主)</b>
+          <p>凌晨两点。我想睡觉。我忍不了了。坏了，我也开始传染了……</p>
+          <p>为了这个小队的膳食纤维，我只能成为生菜牧师了。</p>
+          <em>[ 生菜牧师 ] 已上线。</em>
+        </article>
       </section>
       <div className="classGrid">{Object.values(CLASSES).map((c) => <button key={c.id} className={classId === c.id ? 'selected' : ''} onClick={() => setClassId(c.id)}>
         <SpritePreview spriteId={c.sprite} label={c.name} /><b>{c.name}</b><span>{c.desc}</span><em>技能：{c.skill.name} — {c.skill.desc}</em>
@@ -179,6 +197,14 @@ function Tile({ map, tile, x, y }) {
   const variant = wallSpec ? wallVariantIndex(wallSpec.orientation, x, y, spriteCount, map.visualSeed ?? 1) : tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
   const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
   const transform = wallSpec?.transform ?? (tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined);
+  if (wallSpec) {
+    const floorSprites = sprites.tile_floor;
+    const floorSrc = floorSprites[tileVariantIndex(x, y, floorSprites.length, map.visualSeed ?? 1)];
+    return <div className="tile tileComposite" style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }}>
+      {floorFillRects(wallSpec.orientation).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
+      <img className="wallLayer" src={src} alt={tile} style={{ transform }} />
+    </div>;
+  }
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
 }
 
@@ -222,6 +248,23 @@ function tileVariantIndex(x, y, count, seed) {
 function wallVariantIndex(orientation, x, y, count, seed) {
   if (orientation === 'west' || orientation === 'east') return 0;
   return hashTile(x, y, seed + 31) % count;
+}
+
+function floorFillRects(orientation) {
+  const half = TILE_SIZE / 2;
+  const cardinal = {
+    north: [{ x: 0, y: half, w: TILE_SIZE, h: half }],
+    south: [{ x: 0, y: 0, w: TILE_SIZE, h: half }],
+    west: [{ x: half, y: 0, w: half, h: TILE_SIZE }],
+    east: [{ x: 0, y: 0, w: half, h: TILE_SIZE }],
+  };
+  const corners = {
+    corner_nw: [{ x: half, y: half, w: half, h: half }],
+    corner_ne: [{ x: 0, y: half, w: half, h: half }],
+    corner_sw: [{ x: half, y: 0, w: half, h: half }],
+    corner_se: [{ x: 0, y: 0, w: half, h: half }],
+  };
+  return cardinal[orientation] ?? corners[orientation] ?? [];
 }
 
 function floorTransform(x, y, seed) {
