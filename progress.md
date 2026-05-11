@@ -27,3 +27,4 @@ Original prompt: Transform https://github.com/lancedot/stone-soup-roguelike into
 - Added the rewritten start-menu background story based on the available bread-squad dorm joke framing; if the original joke text is provided later, swap only the copy in `src/App.jsx` and README.
 - Depth 4 now has no downward stairs. The final boss spawns as a stationary 2x2 entity, renders larger, occupies all four tiles for collision/attack targeting, and wins the run when defeated.
 - Verification after boss/story work: 25/25 tests passed, Vite build passed, single-file export regenerated at 1709.5 KB, and `output/story-menu-smoke/shot-0.png` confirms the start story layout.
+- Replaced the temporary story copy with the user's original dorm joke: baguette + dense rye as spear/shield, butter archer, reversed sailor/ham warrior, and narrator becoming lettuce priest at 2 AM.
