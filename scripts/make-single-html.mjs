@@ -6,6 +6,12 @@ const dist = path.join(root, 'dist');
 const out = path.join(root, 'bread-squad-single.html');
 let html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 
+// The root page uses a GitHub Pages redirect fallback. The standalone build is
+// the target of that redirect, so strip the fallback to avoid self-refreshing.
+html = html.replace(/\s*<meta http-equiv="refresh" content="0; url=\.\/bread-squad-single\.html">/, '');
+html = html.replace(/\s*<script>\s*if \(location\.hostname\.endsWith\('github\.io'\)\) \{\s*location\.replace\(new URL\('\.\/bread-squad-single\.html', location\.href\)\);\s*\}\s*<\/script>/, '');
+html = html.replace(/\s*<p><a href="\.\/bread-squad-single\.html">Open Bread Squad Roguelike<\/a><\/p>/, '');
+
 html = html.replace(/<script type="module" crossorigin src="([^"]+)"><\/script>/g, (_, src) => {
   const js = fs.readFileSync(path.join(dist, src.replace(/^\//, '')), 'utf8');
   return `<script type="module">\n${js}\n</script>`;
