@@ -4,7 +4,7 @@ import { distance, key, RNG } from './utils.js';
 
 export function newGame(classId = 'fighter', seed = Date.now()) {
   const rng = new RNG(seed);
-  const cls = CLASSES[classId] ?? CLASSES.fighter;
+  const cls = CLASSES[classId] ?? CLASSES.breadKnight;
   const state = {
     rng,
     seed,
@@ -16,6 +16,7 @@ export function newGame(classId = 'fighter', seed = Date.now()) {
       classId: cls.id,
       name: cls.name,
       sprite: cls.sprite,
+      dir: 'down',
       maxHp: cls.hp,
       hp: cls.hp,
       attack: cls.attack,
@@ -30,10 +31,11 @@ export function newGame(classId = 'fighter', seed = Date.now()) {
     enemies: [],
     items: [],
     summons: [],
+    fx: [],
     log: [],
   };
   enterDepth(state, 1);
-  addLog(state, `你作为${cls.name}进入了石汤地牢。`);
+  addLog(state, `你作为${cls.name}踏入安眠圣域。凌晨两点的远征开始了。`);
   return state;
 }
 
@@ -50,17 +52,25 @@ export function enterDepth(state, depth) {
 
 function populate(state) {
   const occupied = new Set([key(state.player.x, state.player.y)]);
-  const enemyCount = 6 + state.depth * 2;
+  const enemyCount = state.depth >= 4 ? 3 : 5 + state.depth;
   for (let i = 0; i < enemyCount; i++) {
-    const options = ENEMY_TYPES.filter((e) => e.depth <= state.depth + 1);
+    const options = ENEMY_TYPES.filter((e) => !e.boss && e.depth <= state.depth + 1);
     const base = state.rng.pick(options);
     const pos = randomFloor(state.map, state.rng, occupied);
     occupied.add(key(pos.x, pos.y));
     state.enemies.push({ ...base, x: pos.x, y: pos.y, hp: base.hp + state.depth * 2, maxHp: base.hp + state.depth * 2 });
   }
-  const itemCount = 5 + Math.floor(state.depth / 2);
+  if (state.depth >= 4) {
+    const boss = ENEMY_TYPES.find((e) => e.boss);
+    const room = state.map.rooms[state.map.rooms.length - 1];
+    state.enemies.push({ ...boss, x: room.cx, y: room.cy, hp: boss.hp, maxHp: boss.hp });
+    occupied.add(key(room.cx, room.cy));
+  }
+  const itemCount = state.depth >= 4 ? 2 : 3 + Math.floor(state.depth / 2);
+  let scrollsOnFloor = 0;
   for (let i = 0; i < itemCount; i++) {
-    const base = state.rng.pick(ITEM_TYPES);
+    const base = pickItemForDepth(state, scrollsOnFloor);
+    if (base.kind === 'scroll') scrollsOnFloor += 1;
     const pos = randomFloor(state.map, state.rng, occupied);
     occupied.add(key(pos.x, pos.y));
     state.items.push({ ...base, x: pos.x, y: pos.y, uid: `${base.id}-${state.depth}-${i}-${state.rng.int(1, 9999)}` });
@@ -69,8 +79,10 @@ function populate(state) {
 
 export function movePlayer(state, dx, dy) {
   if (state.status !== 'playing') return state;
+  state.fx = [];
   const nx = state.player.x + dx;
   const ny = state.player.y + dy;
+  state.player.dir = dirFromDelta(dx, dy);
   const enemy = state.enemies.find((e) => e.x === nx && e.y === ny);
   const summon = state.summons.find((s) => s.x === nx && s.y === ny);
   if (enemy) {
@@ -100,7 +112,7 @@ export function movePlayer(state, dx, dy) {
 }
 
 function attack(state, attacker, defender) {
-  const crit = attacker.classId === 'rogue' && state.rng.next() < 0.22;
+  const crit = attacker.classId === 'butterArcher' && state.rng.next() < 0.18;
   const raw = attacker.attack + state.rng.int(0, 3) + (crit ? 5 : 0);
   const reduction = defender === state.player ? activeDamageReduction(state.player) : 0;
   const dmg = Math.max(1, raw - (defender.defense ?? 0) - reduction);
@@ -129,9 +141,9 @@ function killEnemy(state, enemy) {
     state.player.attack += 1;
     addLog(state, `升级！你达到 ${state.player.level} 级，生命回满。`);
   }
-  if (enemy.id === 'dragon' && state.depth >= 4) {
+  if (enemy.id === 'insomnia_lord' && state.depth >= 4) {
     state.status = 'won';
-    addLog(state, '石汤古龙被击败，地牢传说属于你！');
+    addLog(state, '失眠魔王碎成一地闹钟。你们夺回了安眠圣杯！');
   }
 }
 
@@ -151,6 +163,7 @@ function pickUpAtPlayer(state) {
 
 export function useItem(state, index) {
   if (state.status !== 'playing') return state;
+  state.fx = [];
   const item = state.player.inventory[index];
   if (!item) return state;
   state.player.inventory.splice(index, 1);
@@ -166,7 +179,7 @@ export function useItem(state, index) {
   } else if (item.kind === 'scroll') {
     const targets = state.enemies.filter((e) => distance(e, state.player) <= 8);
     targets.forEach((e) => { e.hp -= item.damage; });
-    addLog(state, `${item.name}爆燃，${targets.length} 个敌人受到 ${item.damage} 点伤害。`);
+    addLog(state, `使用${item.name}，${targets.length} 个敌人受到 ${item.damage} 点伤害。`);
     [...targets].forEach((e) => { if (e.hp <= 0) killEnemy(state, e); });
   }
   removeDeadSummons(state);
@@ -176,74 +189,76 @@ export function useItem(state, index) {
 
 export function useSkill(state) {
   if (state.status !== 'playing') return state;
+  state.fx = [];
   const skill = state.player.skill;
   if (!skill || skill.remaining > 0) {
     addLog(state, skill ? `${skill.name}还需要 ${skill.remaining} 回合冷却。` : '你没有技能。');
     return state;
   }
   let used = false;
-  if (skill.id === 'shield_bash') used = shieldBash(state);
-  else if (skill.id === 'spice_burst') used = spiceBurst(state);
-  else if (skill.id === 'shadow_stab') used = shadowStab(state);
-  else if (skill.id === 'brew_broth') used = brewBroth(state);
-  else if (skill.id === 'raise_dough') used = raiseDough(state);
-  if (!used) return state;
+  if (skill.id === 'baguette_lance') used = baguetteLance(state);
+  else if (skill.id === 'butter_shot') used = butterShot(state);
+  else if (skill.id === 'ham_cleave') used = hamCleave(state);
+  else if (skill.id === 'leaf_prayer') used = leafPrayer(state);
+  if (!used) {
+    return state;
+  }
   skill.remaining = skill.cooldown;
   finishPlayerTurn(state);
   return state;
 }
 
-function shieldBash(state) {
+function baguetteLance(state) {
   const target = nearestEnemy(state, 1);
-  if (!target) { addLog(state, '锅盖猛击需要相邻敌人。'); return false; }
-  target.hp -= state.player.attack + state.player.defense + temporaryDefense(state.player) + 4;
+  if (!target) { addLog(state, '法棍突刺需要相邻敌人。'); return false; }
+  target.hp -= state.player.attack + state.player.defense + temporaryDefense(state.player) + 5;
   state.player.effects = state.player.effects.filter((e) => e.id !== 'guard');
-  state.player.effects.push({ id: 'guard', name: '防守', turns: 2, damageReduction: 2 });
-  addLog(state, `锅盖猛击砸向${target.name}，并架起防守。`);
+  state.player.effects.push({ id: 'guard', name: '列巴护盾', turns: 2, damageReduction: 2 });
+  addFx(state, state.player.skill.fx, target.x, target.y);
+  addLog(state, `法棍突刺命中${target.name}，列巴护在胸前。`);
   if (target.hp <= 0) killEnemy(state, target);
   return true;
 }
 
-function spiceBurst(state) {
-  const targets = state.enemies.filter((e) => distance(e, state.player) <= 5);
-  if (targets.length === 0) { addLog(state, '辣雾爆燃没有命中目标。'); return false; }
-  targets.forEach((e) => { e.hp -= 8; });
-  addLog(state, `辣雾爆燃席卷 ${targets.length} 个敌人。`);
+function butterShot(state) {
+  const target = nearestEnemy(state, 6);
+  if (!target) { addLog(state, '黄油箭找不到射程内的敌人。'); return false; }
+  target.hp -= state.player.attack + 4;
+  const spot = adjacentOpenSquares(state, state.player)[0];
+  if (spot) {
+    state.player.x = spot.x;
+    state.player.y = spot.y;
+  }
+  addFx(state, state.player.skill.fx, target.x, target.y);
+  addLog(state, `黄油箭射中${target.name}，你顺势滑开。`);
+  if (target.hp <= 0) killEnemy(state, target);
+  return true;
+}
+
+function hamCleave(state) {
+  const targets = state.enemies.filter((e) => distance(e, state.player) === 1);
+  if (targets.length === 0) { addLog(state, '火腿横扫需要相邻敌人。'); return false; }
+  targets.forEach((e) => { e.hp -= state.player.attack + 3; });
+  state.player.effects = state.player.effects.filter((e) => e.id !== 'sizzle_guard');
+  state.player.effects.push({ id: 'sizzle_guard', name: '焦香防守', turns: 2, damageReduction: 1 });
+  addFx(state, state.player.skill.fx, state.player.x, state.player.y);
+  addLog(state, `火腿横扫扫过 ${targets.length} 个敌人，香气形成护身热浪。`);
   [...targets].forEach((e) => { if (e.hp <= 0) killEnemy(state, e); });
   return true;
 }
 
-function shadowStab(state) {
-  const target = nearestEnemy(state, 6);
-  if (!target) { addLog(state, '影步背刺找不到近处敌人。'); return false; }
-  const spot = adjacentOpenSquares(state, target).sort((a, b) => distance(a, state.player) - distance(b, state.player))[0];
-  if (!spot) { addLog(state, '没有位置可供影步落脚。'); return false; }
-  state.player.x = spot.x;
-  state.player.y = spot.y;
-  target.hp -= state.player.attack + 6;
-  addLog(state, `你影步到${target.name}身旁完成背刺。`);
-  if (target.hp <= 0) killEnemy(state, target);
-  return true;
-}
-
-function brewBroth(state) {
+function leafPrayer(state) {
   if (state.player.hp < state.player.maxHp) {
     const amount = Math.min(10, state.player.maxHp - state.player.hp);
     state.player.hp += amount;
-    addLog(state, `急煮药汤温暖全身，回复 ${amount} 点生命。`);
+    addFx(state, state.player.skill.fx, state.player.x, state.player.y);
+    addLog(state, `生菜祈祷清脆作响，回复 ${amount} 点生命。`);
   } else {
-    state.player.effects = state.player.effects.filter((e) => e.id !== 'broth_armor');
-    state.player.effects.push({ id: 'broth_armor', name: '药汤护体', turns: 3, defenseBonus: 1 });
-    addLog(state, '药汤化作护体热气，临时防御 +1。');
+    state.player.effects = state.player.effects.filter((e) => e.id !== 'leaf_shield');
+    state.player.effects.push({ id: 'leaf_shield', name: '清脆护盾', turns: 3, defenseBonus: 1 });
+    addFx(state, state.player.skill.fx, state.player.x, state.player.y);
+    addLog(state, '生菜叶展开，临时防御 +1。');
   }
-  return true;
-}
-
-function raiseDough(state) {
-  const spot = adjacentOpenSquares(state, state.player)[0];
-  if (!spot) { addLog(state, '周围没有空间发酵面团。'); return false; }
-  state.summons.push({ id: `dough-${Date.now()}-${state.rng.int(1, 9999)}`, name: '面团伙伴', hp: 10 + state.player.level * 2, maxHp: 10 + state.player.level * 2, attack: state.player.attack, defense: 0, sprite: 'summon_dough', x: spot.x, y: spot.y });
-  addLog(state, '面团伙伴鼓起来，挡在你身边。');
   return true;
 }
 
@@ -266,6 +281,7 @@ function adjacentOpenSquares(state, origin) {
 
 export function waitTurn(state) {
   if (state.status === 'playing') {
+    state.fx = [];
     addLog(state, '你屏息等待。');
     finishPlayerTurn(state);
   }
@@ -330,6 +346,7 @@ function enemyTurn(state) {
         const k = key(nx, ny);
         if (isWalkable(state.map, nx, ny) && !occupied.has(k) && !isPlayerAt(state, nx, ny) && !isSummonAt(state, nx, ny)) {
           occupied.delete(key(enemy.x, enemy.y));
+          enemy.dir = dirFromDelta(step.dx, step.dy);
           enemy.x = nx; enemy.y = ny;
           occupied.add(k);
           break;
@@ -369,6 +386,32 @@ function checkGameOver(state) {
 export function addLog(state, message) {
   state.log.unshift(message);
   state.log = state.log.slice(0, MAX_LOG);
+}
+
+function addFx(state, sprite, x, y) {
+  if (!sprite) return;
+  state.fx = [{ id: `${sprite}-${state.rng.int(1, 999999)}`, name: '技能效果', sprite, x, y }];
+}
+
+function pickItemForDepth(state, scrollsOnFloor) {
+  const options = ITEM_TYPES.filter((item) => {
+    if ((item.minDepth ?? 1) > state.depth) return false;
+    if (item.kind === 'scroll' && scrollsOnFloor >= 1) return false;
+    return true;
+  });
+  const total = options.reduce((sum, item) => sum + (item.weight ?? 1), 0);
+  let roll = state.rng.next() * total;
+  for (const item of options) {
+    roll -= item.weight ?? 1;
+    if (roll <= 0) return item;
+  }
+  return options[options.length - 1];
+}
+
+function dirFromDelta(dx, dy) {
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
+  if (dy < 0) return 'up';
+  return 'down';
 }
 
 export function serializeState(state) {

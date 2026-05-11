@@ -1,38 +1,48 @@
 * { box-sizing: border-box; }
-body { margin: 0; color: #eadfcb; background: radial-gradient(circle at 30% 10%, #29364d, #10131a 55%, #08090c); font-family: system-ui, 'Microsoft YaHei', sans-serif; }
+body { margin: 0; color: #f2e8d8; background: radial-gradient(circle at 20% 8%, #4b3b30, #18202a 52%, #090b0e); font-family: system-ui, 'Microsoft YaHei', sans-serif; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .62; }
 .menu { max-width: 1120px; margin: 0 auto; padding: 42px 24px; text-align: center; }
-h1 { font-size: 56px; margin: 0 0 12px; color: #ffd37a; text-shadow: 0 4px #5a2d1b; }
+h1 { font-size: 56px; margin: 0 0 12px; color: #ffe66d; text-shadow: 0 4px #5a2d1b; }
 .menu p { color: #cbbfa9; line-height: 1.7; }
-.classGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 28px 0; }
-.classGrid button { background: #1b2230; color: #eadfcb; border: 2px solid #3c465b; border-radius: 14px; padding: 14px; min-height: 260px; transition: transform .12s, border-color .12s; }
+.classGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 28px 0; }
+.classGrid button { background: #1b2230; color: #eadfcb; border: 2px solid #4a4f42; border-radius: 8px; padding: 14px; min-height: 260px; transition: transform .12s, border-color .12s; }
 .classGrid button:hover, .classGrid .selected { transform: translateY(-3px); border-color: #ffd37a; }
 .classGrid img { width: 72px; height: 72px; image-rendering: pixelated; display: block; margin: 0 auto 10px; }
+.classPreview { width: 72px; height: 72px; display: block; margin: 0 auto 10px; image-rendering: pixelated; background-repeat: no-repeat; background-size: calc(72px * var(--cols)) calc(72px * var(--rows)); background-position: 0 0; animation: class-preview-walk 680ms steps(4) infinite; filter: drop-shadow(0 4px 0 #0008); }
+@keyframes class-preview-walk { from { background-position-x: 0; } to { background-position-x: -288px; } }
 .classGrid b { display: block; font-size: 20px; margin-bottom: 8px; }
 .classGrid span { display: block; color: #b8af9d; min-height: 44px; }
 .classGrid em { display: block; margin-top: 10px; color: #ffd37a; font-style: normal; font-size: 13px; line-height: 1.35; }
-.start { font-size: 22px; padding: 14px 28px; border-radius: 12px; border: 0; color: #2a160b; background: linear-gradient(#ffd37a, #e88f3a); font-weight: 800; }
+.start { font-size: 22px; padding: 14px 28px; border-radius: 8px; border: 0; color: #2a160b; background: linear-gradient(#ffe66d, #e88f3a); font-weight: 800; }
 .hint { font-size: 14px; }
 .game { display: flex; gap: 18px; padding: 18px; align-items: flex-start; }
 .board { position: relative; flex: none; border: 4px solid #3c2b23; box-shadow: 0 0 0 4px #111, 0 16px 50px #000a; background: #111; overflow: hidden; }
 .tile { position: absolute; width: 32px; height: 32px; image-rendering: pixelated; }
 .sprite { position: absolute; width: 32px; height: 32px; z-index: 3; transition: left .08s linear, top .08s linear; }
 .sprite img { width: 32px; height: 32px; image-rendering: pixelated; filter: drop-shadow(0 3px 2px #000a); }
+.spriteSheet { width: 32px; height: 32px; display: block; image-rendering: pixelated; filter: drop-shadow(0 3px 2px #000a); background-repeat: no-repeat; background-size: calc(32px * var(--cols)) calc(32px * var(--rows)); animation: sprite-walk var(--frame-ms) steps(4) infinite; }
+.spriteSheet.dir-down { background-position-y: 0; }
+.spriteSheet.dir-left { background-position-y: calc(-32px * 1); }
+.spriteSheet.dir-right { background-position-y: calc(-32px * 2); }
+.spriteSheet.dir-up { background-position-y: calc(-32px * 3); }
+@keyframes sprite-walk { from { background-position-x: 0; } to { background-position-x: -128px; } }
 .sprite.player { z-index: 5; }
 .sprite.summon { z-index: 4; }
+.sprite.fx { z-index: 8; pointer-events: none; transform: scale(1.25); opacity: .9; }
+.sprite.fx .spriteSheet { animation-duration: 420ms; filter: drop-shadow(0 0 8px #ffd37a); }
 .sprite.summon img { filter: drop-shadow(0 0 5px #ffe8bd); }
 .sprite small { position: absolute; right: -5px; top: -6px; font-size: 10px; background: #4b1020; color: #fff; border-radius: 8px; padding: 1px 4px; }
-.panel { width: 330px; min-height: 768px; background: #151b26ee; border: 2px solid #3c465b; border-radius: 12px; padding: 16px; box-shadow: 0 12px 35px #0008; }
+.panel { width: 360px; min-height: 704px; background: #151b26ee; border: 2px solid #4a4f42; border-radius: 8px; padding: 16px; box-shadow: 0 12px 35px #0008; }
 .panel h2, .panel h3 { color: #ffd37a; margin: 8px 0 10px; }
-.stats, .skillBox { background: #0f131b; padding: 12px; border-radius: 10px; border: 1px solid #30384a; margin-bottom: 12px; }
-.stats p, .skillBox p { margin: 8px 0 0; color: #cbbfa9; }
+.stats, .skillBox, .helpBox { background: #0f131b; padding: 12px; border-radius: 8px; border: 1px solid #30384a; margin-bottom: 12px; }
+.stats p, .skillBox p, .helpBox p { margin: 8px 0 0; color: #cbbfa9; }
 .bar { height: 16px; background: #351820; border-radius: 99px; margin: 10px 0; overflow: hidden; border: 1px solid #56313a; }
 .bar i { display: block; height: 100%; background: linear-gradient(90deg, #db3d3d, #ff9b54); }
 .skillBox h3 { display: flex; justify-content: space-between; align-items: center; margin-top: 0; }
 kbd { background: #ffd37a; color: #1b1208; border-radius: 5px; padding: 2px 7px; font-weight: 900; }
 .skillBox button { width: 100%; display: flex; justify-content: space-between; gap: 8px; align-items: center; border: 1px solid #7b5c2a; background: linear-gradient(#2d3548, #202838); color: #eadfcb; border-radius: 9px; padding: 9px; }
-.waitButton { width: 100%; display: flex; justify-content: center; gap: 8px; align-items: center; margin: 0 0 12px; border: 1px solid #3c465b; background: #202838; color: #eadfcb; border-radius: 9px; padding: 9px; font-weight: 800; }
+.waitButton { width: 100%; display: flex; justify-content: center; gap: 8px; align-items: center; margin: 0 0 12px; border: 1px solid #3c465b; background: #202838; color: #eadfcb; border-radius: 8px; padding: 9px; font-weight: 800; }
 .skillBox button b { color: #ffd37a; }
 .effects { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .effects i { font-style: normal; font-size: 12px; color: #1b1208; background: #8ee6b8; border-radius: 999px; padding: 3px 8px; }
@@ -40,9 +50,14 @@ kbd { background: #ffd37a; color: #1b1208; border-radius: 5px; padding: 2px 7px;
 .inventory button { display: flex; align-items: center; gap: 8px; background: #202838; color: #eadfcb; border: 1px solid #3c465b; border-radius: 8px; padding: 7px; text-align: left; }
 .inventory span { width: 20px; height: 20px; border-radius: 50%; background: #ffd37a; color: #1b1208; display: grid; place-items: center; font-weight: 800; }
 .inventory img { width: 28px; height: 28px; image-rendering: pixelated; }
+.inventory strong { display: grid; gap: 2px; font-size: 14px; line-height: 1.2; }
+.inventory small { color: #aebf9c; font-size: 12px; font-weight: 500; }
+.helpBox h3 { margin-top: 0; }
+.helpBox p { font-size: 13px; line-height: 1.45; }
 .log { padding-left: 18px; color: #cbbfa9; line-height: 1.45; font-size: 14px; }
 .log li:first-child { color: #fff; }
-.overlay { position: absolute; inset: 0; z-index: 20; background: #000b; display: grid; place-content: center; text-align: center; }
+.overlay { position: absolute; inset: 0; z-index: 20; background: #000c; display: grid; place-content: center; justify-items: center; text-align: center; padding: 24px; }
+.victoryArt { width: min(520px, 82vw); max-height: 360px; object-fit: contain; image-rendering: auto; border: 2px solid #ffd37a; background: #f8edd0; box-shadow: 0 10px 0 #0008; margin-bottom: 16px; }
 .overlay h2 { font-size: 48px; color: #ffd37a; margin: 0 0 16px; }
 .overlay button { padding: 12px 20px; border: 0; border-radius: 10px; background: #ffd37a; font-weight: 800; }
 @media (max-width: 1220px) { .game { transform: scale(.8); transform-origin: top left; width: 125%; } .classGrid { grid-template-columns: repeat(2, 1fr); } }

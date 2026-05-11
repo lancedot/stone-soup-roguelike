@@ -11,24 +11,57 @@ function cloneState(state) {
     enemies: state.enemies.map((e) => ({ ...e })),
     items: state.items.map((i) => ({ ...i })),
     summons: state.summons.map((s) => ({ ...s })),
+    fx: (state.fx ?? []).map((f) => ({ ...f })),
     log: [...state.log],
     map: { ...state.map, tiles: state.map.tiles.map((r) => [...r]), rooms: state.map.rooms.map((r) => ({ ...r })) },
   };
 }
 
 export default function App() {
-  const [classId, setClassId] = useState('fighter');
-  const [state, setState] = useState(() => newGame('fighter'));
+  const [classId, setClassId] = useState('breadKnight');
+  const [state, setState] = useState(() => newGame('breadKnight'));
   const [started, setStarted] = useState(false);
 
   const restart = (cls = classId) => {
     setState(newGame(cls));
     setStarted(true);
+    window.scrollTo({ top: 0, left: 0 });
+    setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 0);
+    setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 80);
   };
   const returnToMenu = () => {
     setStarted(false);
+    window.scrollTo({ top: 0, left: 0 });
+    setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 0);
   };
   const apply = (fn) => setState((old) => { const next = cloneState(old); next.rng = old.rng; return fn(next); });
+
+  useEffect(() => {
+    window.render_game_to_text = () => JSON.stringify({
+      mode: started ? state.status : 'menu',
+      note: 'Grid origin is top-left. x grows right, y grows down.',
+      depth: state.depth,
+      player: {
+        classId: state.player.classId,
+        name: state.player.name,
+        x: state.player.x,
+        y: state.player.y,
+        hp: state.player.hp,
+        maxHp: state.player.maxHp,
+        skill: state.player.skill,
+      },
+      enemies: state.enemies.map((e) => ({ id: e.id, name: e.name, x: e.x, y: e.y, hp: e.hp })),
+      items: state.items.map((i) => ({ id: i.id, name: i.name, desc: i.desc, x: i.x, y: i.y })),
+      inventory: state.player.inventory.map((i) => ({ id: i.id, name: i.name, desc: i.desc })),
+      fx: (state.fx ?? []).map((f) => ({ sprite: f.sprite, x: f.x, y: f.y })),
+      latestLog: state.log[0] ?? '',
+    });
+    window.advanceTime = () => {};
+    return () => {
+      delete window.render_game_to_text;
+      delete window.advanceTime;
+    };
+  }, [state, started]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -39,26 +72,38 @@ export default function App() {
         e.preventDefault();
         apply((next) => movePlayer(next, dirs[k][0], dirs[k][1]));
       } else if (k >= '1' && k <= '8') {
+        e.preventDefault();
         apply((next) => useItem(next, Number(k) - 1));
       } else if (k === 'q') {
+        e.preventDefault();
         apply((next) => useSkill(next));
       } else if (k === '.' || k === ' ') {
+        e.preventDefault();
         apply((next) => waitTurn(next));
-      } else if (k === 'r') returnToMenu();
+      } else if (k === 'r') {
+        e.preventDefault();
+        returnToMenu();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [started, classId]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+    const id = setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 80);
+    return () => clearTimeout(id);
+  }, [started]);
+
   if (!started) {
     return <main className="menu">
-      <h1>地牢炖汤</h1>
-      <p>传统回合制肉鸽：随机地牢、永久死亡、探索、捡装备、职业技能。灵感参考 DCSS/石头汤，但素材与规则为原创。</p>
+      <h1>面包小队</h1>
+      <p>凌晨两点，安眠圣域裂开了。四位被宿舍传说选中的勇者必须击败失眠魔王，夺回能让人闭眼的安眠圣杯。</p>
       <div className="classGrid">{Object.values(CLASSES).map((c) => <button key={c.id} className={classId === c.id ? 'selected' : ''} onClick={() => setClassId(c.id)}>
-        <img src={sprites[c.sprite]} alt={c.name} /><b>{c.name}</b><span>{c.desc}</span><em>技能：{c.skill.name} — {c.skill.desc}</em>
+        <SpritePreview spriteId={c.sprite} label={c.name} /><b>{c.name}</b><span>{c.desc}</span><em>技能：{c.skill.name} — {c.skill.desc}</em>
       </button>)}</div>
-      <button className="start" onClick={() => restart(classId)}>开始下地牢</button>
-      <p className="hint">操作：方向键/WASD/vi 键移动，Q 使用技能，数字 1-8 使用物品，空格或句号等待，R 返回选角色界面。走向自己的召唤物可与它换位。</p>
+      <button className="start" onClick={() => restart(classId)}>出发冒险</button>
+      <p className="hint">小体量传统肉鸽：移动就是探索，撞上敌人就是攻击，死了就重来。目标：第 4 层击败失眠魔王。</p>
     </main>;
   }
 
@@ -69,19 +114,48 @@ export default function App() {
       {state.summons.map((summon) => <Sprite key={summon.id} entity={summon} hp summon />)}
       {state.enemies.map((enemy, i) => <Sprite key={`${enemy.id}-${i}-${enemy.x}-${enemy.y}`} entity={enemy} hp />)}
       <Sprite entity={state.player} player />
-      {state.status !== 'playing' && <div className="overlay"><h2>{state.status === 'won' ? '胜利！' : '你死了'}</h2><button onClick={() => restart(classId)}>再来一局</button></div>}
+      {(state.fx ?? []).map((fx) => <Sprite key={fx.id} entity={fx} fx />)}
+      {state.status !== 'playing' && <div className="overlay">
+        {state.status === 'won' && <VictoryArt classId={state.player.classId} />}
+        <h2>{state.status === 'won' ? '夺回安眠圣杯！' : '你睡过去了'}</h2>
+        <button onClick={() => restart(classId)}>再来一局</button>
+      </div>}
     </section>
     <aside className="panel">
-      <h2>第 {state.depth} 层</h2>
+      <h2>安眠圣域 第 {state.depth} 层</h2>
       <Stats p={state.player} />
       <SkillBox skill={state.player.skill} effects={state.player.effects} onUse={() => apply((next) => useSkill(next))} />
-      <button className="waitButton" onClick={() => apply((next) => waitTurn(next))}>等待一回合 <kbd>空格</kbd> / <kbd>.</kbd></button>
+      <button className="waitButton" onClick={() => apply((next) => waitTurn(next))}>等待 <kbd>空格</kbd><kbd>.</kbd></button>
+      <HelpBox />
       <h3>背包</h3>
-      <div className="inventory">{state.player.inventory.length === 0 ? <em>空</em> : state.player.inventory.map((item, i) => <button key={item.uid} onClick={() => apply((next) => useItem(next, i))}><span>{i + 1}</span><img src={sprites[item.sprite]} alt={item.name} />{item.name}</button>)}</div>
+      <div className="inventory">{state.player.inventory.length === 0 ? <em>空</em> : state.player.inventory.map((item, i) => <button key={item.uid} title={item.desc} onClick={() => apply((next) => useItem(next, i))}><span>{i + 1}</span><img src={sprites[item.sprite]} alt={item.name} /><strong>{item.name}<small>{item.desc}</small></strong></button>)}</div>
       <h3>日志</h3>
       <ul className="log">{state.log.map((l, i) => <li key={i}>{l}</li>)}</ul>
     </aside>
   </main>;
+}
+
+function HelpBox() {
+  return <div className="helpBox">
+    <h3>操作说明</h3>
+    <p><kbd>方向键</kbd> / <kbd>WASD</kbd> 移动；撞到敌人会近战攻击。</p>
+    <p><kbd>Q</kbd> 使用职业技能；成功才消耗回合。</p>
+    <p><kbd>1-8</kbd> 使用背包道具；道具是瞬间动作。</p>
+    <p>站到 <b>&gt;</b> 楼梯上下楼；第 4 层打倒失眠魔王获胜。</p>
+    <p><kbd>R</kbd> 回到选角；死亡后可以立刻再来。</p>
+  </div>;
+}
+
+function SpritePreview({ spriteId, label }) {
+  const sprite = sprites[spriteId];
+  if (typeof sprite === 'string') return <img src={sprite} alt={label} />;
+  return <span className="classPreview" aria-label={label} title={label} style={{ backgroundImage: `url(${sprite.src})`, '--cols': sprite.cols, '--rows': sprite.rows }} />;
+}
+
+function VictoryArt({ classId }) {
+  const cls = CLASSES[classId] ?? CLASSES.breadKnight;
+  const src = sprites[cls.victoryCg];
+  return <img className="victoryArt" src={src} alt={`${cls.name}通关结算`} />;
 }
 
 function Tile({ tile, x, y }) {
@@ -89,9 +163,13 @@ function Tile({ tile, x, y }) {
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }} />;
 }
 
-function Sprite({ entity, player, hp, summon }) {
-  return <div className={`sprite ${player ? 'player' : ''} ${summon ? 'summon' : ''}`} style={{ left: entity.x * TILE_SIZE, top: entity.y * TILE_SIZE }}>
-    <img src={sprites[entity.sprite]} alt={entity.name} title={entity.name} />
+function Sprite({ entity, player, hp, summon, fx }) {
+  const sprite = sprites[entity.sprite];
+  const direction = entity.dir ?? 'down';
+  return <div className={`sprite ${player ? 'player' : ''} ${summon ? 'summon' : ''} ${fx ? 'fx' : ''}`} style={{ left: entity.x * TILE_SIZE, top: entity.y * TILE_SIZE }}>
+    {typeof sprite === 'string'
+      ? <img src={sprite} alt={entity.name} title={entity.name} />
+      : <span className={`spriteSheet dir-${direction}`} title={entity.name} style={{ backgroundImage: `url(${sprite.src})`, '--cols': sprite.cols, '--rows': sprite.rows, '--frame-ms': `${sprite.frameMs ?? 520}ms` }} />}
     {hp && <small>{entity.hp}</small>}
   </div>;
 }
