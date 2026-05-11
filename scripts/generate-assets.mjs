@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const scripts = [
-  path.resolve('scripts/generate-png-assets.py'),
-  path.resolve('scripts/generate-premium-hero-sheets.py'),
+  path.resolve('scripts/normalize-img2-hero-sheets.py'),
+  path.resolve('scripts/normalize-img2-static-assets.py'),
 ];
 const candidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
 

@@ -55,6 +55,15 @@ export function enterDepth(state, depth) {
 
 function populate(state) {
   const occupied = new Set([key(state.player.x, state.player.y)]);
+  if (state.depth >= 4) {
+    const boss = ENEMY_TYPES.find((e) => e.boss);
+    const room = state.map.rooms[state.map.rooms.length - 1];
+    const x = Math.max(room.x, Math.min(room.x + room.w - 2, room.cx - 1));
+    const y = Math.max(room.y, Math.min(room.y + room.h - 2, room.cy - 1));
+    state.enemies.push({ ...boss, x, y, size: 2, immobile: true, hp: boss.hp, maxHp: boss.hp });
+    addOccupiedFootprint(occupied, { x, y, size: 2 });
+  }
+
   const enemyCount = state.depth >= 4 ? 3 : 5 + state.depth;
   for (let i = 0; i < enemyCount; i++) {
     const options = ENEMY_TYPES.filter((e) => !e.boss && e.depth <= state.depth + 1);
@@ -62,12 +71,6 @@ function populate(state) {
     const pos = randomFloor(state.map, state.rng, occupied);
     occupied.add(key(pos.x, pos.y));
     state.enemies.push({ ...base, x: pos.x, y: pos.y, hp: base.hp + state.depth * 2, maxHp: base.hp + state.depth * 2 });
-  }
-  if (state.depth >= 4) {
-    const boss = ENEMY_TYPES.find((e) => e.boss);
-    const room = state.map.rooms[state.map.rooms.length - 1];
-    state.enemies.push({ ...boss, x: room.cx, y: room.cy, hp: boss.hp, maxHp: boss.hp });
-    occupied.add(key(room.cx, room.cy));
   }
   const itemCount = state.depth >= 4 ? 2 : 3 + Math.floor(state.depth / 2);
   const itemCounts = {};
@@ -86,7 +89,7 @@ export function movePlayer(state, dx, dy) {
   const nx = state.player.x + dx;
   const ny = state.player.y + dy;
   state.player.dir = dirFromDelta(dx, dy);
-  const enemy = state.enemies.find((e) => e.x === nx && e.y === ny);
+  const enemy = state.enemies.find((e) => occupies(e, nx, ny));
   const summon = state.summons.find((s) => s.x === nx && s.y === ny);
   if (enemy) {
     attack(state, state.player, enemy);
@@ -272,16 +275,16 @@ function leafPrayer(state) {
 
 function nearestEnemy(state, maxRange) {
   return state.enemies
-    .filter((e) => distance(e, state.player) <= maxRange)
-    .sort((a, b) => distance(a, state.player) - distance(b, state.player))[0];
+    .filter((e) => distanceToEntity(e, state.player) <= maxRange)
+    .sort((a, b) => distanceToEntity(a, state.player) - distanceToEntity(b, state.player))[0];
 }
 
 function adjacentOpenSquares(state, origin) {
   const occupied = new Set([
     key(state.player.x, state.player.y),
-    ...state.enemies.map((e) => key(e.x, e.y)),
     ...state.summons.map((s) => key(s.x, s.y)),
   ]);
+  state.enemies.forEach((e) => addOccupiedFootprint(occupied, e));
   return [[1, 0], [-1, 0], [0, 1], [0, -1]]
     .map(([dx, dy]) => ({ x: origin.x + dx, y: origin.y + dy }))
     .filter((p) => isWalkable(state.map, p.x, p.y) && !occupied.has(key(p.x, p.y)));
@@ -329,20 +332,22 @@ function removeDeadEnemies(state) {
 }
 
 function enemyTurn(state) {
-  const occupied = new Set(state.enemies.map((e) => key(e.x, e.y)));
+  const occupied = new Set();
+  state.enemies.forEach((e) => addOccupiedFootprint(occupied, e));
   for (const enemy of state.enemies) {
     if (state.status !== 'playing') return;
-    const adjacentSummon = state.summons.find((s) => distance(enemy, s) === 1);
+    const adjacentSummon = state.summons.find((s) => distanceToEntity(enemy, s) === 1);
     if (adjacentSummon) {
       attack(state, enemy, adjacentSummon);
       continue;
     }
-    if (distance(enemy, state.player) === 1) {
+    if (distanceToEntity(enemy, state.player) === 1) {
       attack(state, enemy, state.player);
       continue;
     }
+    if (enemy.immobile) continue;
     const target = chooseEnemyTarget(state, enemy);
-    if (distance(enemy, target) <= 7) {
+    if (distanceToEntity(enemy, target) <= 7) {
       const dx = Math.sign(target.x - enemy.x);
       const dy = Math.sign(target.y - enemy.y);
       const candidates = Math.abs(target.x - enemy.x) > Math.abs(target.y - enemy.y)
@@ -353,10 +358,10 @@ function enemyTurn(state) {
         const ny = enemy.y + step.dy;
         const k = key(nx, ny);
         if (isWalkable(state.map, nx, ny) && !occupied.has(k) && !isPlayerAt(state, nx, ny) && !isSummonAt(state, nx, ny)) {
-          occupied.delete(key(enemy.x, enemy.y));
+          removeOccupiedFootprint(occupied, enemy);
           enemy.dir = dirFromDelta(step.dx, step.dy);
           enemy.x = nx; enemy.y = ny;
-          occupied.add(k);
+          addOccupiedFootprint(occupied, enemy);
           break;
         }
       }
@@ -366,7 +371,33 @@ function enemyTurn(state) {
 
 function chooseEnemyTarget(state, enemy) {
   const candidates = [state.player, ...state.summons];
-  return candidates.sort((a, b) => distance(enemy, a) - distance(enemy, b))[0];
+  return candidates.sort((a, b) => distanceToEntity(enemy, a) - distanceToEntity(enemy, b))[0];
+}
+
+function occupies(entity, x, y) {
+  const size = entity.size ?? 1;
+  return x >= entity.x && x < entity.x + size && y >= entity.y && y < entity.y + size;
+}
+
+function addOccupiedFootprint(occupied, entity) {
+  const size = entity.size ?? 1;
+  for (let y = entity.y; y < entity.y + size; y++) {
+    for (let x = entity.x; x < entity.x + size; x++) occupied.add(key(x, y));
+  }
+}
+
+function removeOccupiedFootprint(occupied, entity) {
+  const size = entity.size ?? 1;
+  for (let y = entity.y; y < entity.y + size; y++) {
+    for (let x = entity.x; x < entity.x + size; x++) occupied.delete(key(x, y));
+  }
+}
+
+function distanceToEntity(entity, target) {
+  const size = entity.size ?? 1;
+  const nearestX = Math.max(entity.x, Math.min(target.x, entity.x + size - 1));
+  const nearestY = Math.max(entity.y, Math.min(target.y, entity.y + size - 1));
+  return Math.abs(nearestX - target.x) + Math.abs(nearestY - target.y);
 }
 
 function isPlayerAt(state, x, y) {

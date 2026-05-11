@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { newGame, movePlayer, useItem, useSkill, waitTurn } from '../src/game/engine.js';
+import { enterDepth, newGame, movePlayer, useItem, useSkill, waitTurn } from '../src/game/engine.js';
 import { isWalkable } from '../src/game/map.js';
 import { CLASSES, ENEMY_TYPES, ITEM_TYPES } from '../src/game/data.js';
 import { sprites } from '../src/sprites.js';
@@ -168,6 +168,24 @@ test('the final boss on depth four grants victory when defeated', () => {
   assert.equal(state.status, 'won');
 });
 
+test('depth four has a stationary two-by-two boss and no exit stairs', () => {
+  const state = newGame('breadKnight', 777);
+  enterDepth(state, 4);
+  const boss = state.enemies.find((e) => e.id === 'insomnia_lord');
+  assert.equal(boss.size, 2);
+  assert.equal(boss.immobile, true);
+  assert.equal(state.map.tiles.flat().includes('>'), false);
+
+  const start = { x: boss.x, y: boss.y };
+  state.player.x = boss.x - 1;
+  state.player.y = boss.y;
+  state.player.hp = state.player.maxHp;
+  state.enemies = [boss];
+  movePlayer(state, 1, 0);
+  assert.deepEqual({ x: boss.x, y: boss.y }, start);
+  assert.ok(boss.hp < boss.maxHp);
+});
+
 test('using item is instant and does not trigger enemy turn or cooldown tick', () => {
   const state = newGame('breadKnight', 306);
   state.enemies = [{ id: 'nightmare_rat', name: '测试梦魇鼠', hp: 8, maxHp: 8, attack: 3, defense: 0, xp: 1, sprite: 'enemy_nightmare_rat', x: state.player.x + 1, y: state.player.y }];
@@ -206,6 +224,14 @@ test('four classes have rough victory CG assets and skill FX sheets', () => {
   for (const cls of Object.values(CLASSES)) {
     assert.ok(cls.skill.fx, `${cls.name} should name a skill fx`);
     assert.equal(sprites[cls.skill.fx]?.kind, 'sheet');
+  }
+});
+
+test('terrain sprites use four img2 variants for less repetitive dungeon tiling', () => {
+  for (const id of ['tile_floor', 'tile_wall', 'tile_stairs']) {
+    assert.equal(Array.isArray(sprites[id]), true, `${id} should declare terrain variants`);
+    assert.equal(sprites[id].length, 4);
+    assert.ok(sprites[id].every((src) => src.endsWith('.png')), `${id} variants should be PNG assets`);
   }
 });
 

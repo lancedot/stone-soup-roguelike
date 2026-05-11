@@ -29,8 +29,10 @@ export function makeMap(rng, depth = 1) {
 
   if (rooms.length === 0) throw new Error('map generation failed');
   const start = { x: rooms[0].cx, y: rooms[0].cy };
-  const endRoom = rooms[rooms.length - 1];
-  tiles[endRoom.cy][endRoom.cx] = TILES.stairs;
+  if (depth < 4) {
+    const endRoom = rooms[rooms.length - 1];
+    tiles[endRoom.cy][endRoom.cx] = TILES.stairs;
+  }
 
   return { width: MAP_WIDTH, height: MAP_HEIGHT, tiles, rooms, start, depth };
 }

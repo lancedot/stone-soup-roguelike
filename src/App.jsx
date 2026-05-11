@@ -50,7 +50,7 @@ export default function App() {
         maxHp: state.player.maxHp,
         skill: state.player.skill,
       },
-      enemies: state.enemies.map((e) => ({ id: e.id, name: e.name, x: e.x, y: e.y, hp: e.hp })),
+      enemies: state.enemies.map((e) => ({ id: e.id, name: e.name, x: e.x, y: e.y, size: e.size ?? 1, hp: e.hp })),
       items: state.items.map((i) => ({ id: i.id, name: i.name, desc: i.desc, x: i.x, y: i.y })),
       inventory: state.player.inventory.map((i) => ({ id: i.id, name: i.name, desc: i.desc })),
       fx: (state.fx ?? []).map((f) => ({ sprite: f.sprite, x: f.x, y: f.y })),
@@ -98,7 +98,10 @@ export default function App() {
   if (!started) {
     return <main className="menu">
       <h1>面包小队</h1>
-      <p>凌晨两点，安眠圣域裂开了。四位被宿舍传说选中的勇者必须击败失眠魔王，夺回能让人闭眼的安眠圣杯。</p>
+      <section className="storyIntro">
+        <p>凌晨两点，宿舍群里那个离谱段子成真了：有人说睡不着就吃点面包，有人说抹黄油会滑进梦里，还有人坚持火腿和生菜才是安眠配方。</p>
+        <p>笑声刚落，安眠圣域裂开一条缝。面包骑士、黄油射手、火腿战士和生菜牧师被一起卷进地牢，只剩一个目标：打败把全楼都吵醒的失眠魔王，夺回能让人闭眼的安眠圣杯。</p>
+      </section>
       <div className="classGrid">{Object.values(CLASSES).map((c) => <button key={c.id} className={classId === c.id ? 'selected' : ''} onClick={() => setClassId(c.id)}>
         <SpritePreview spriteId={c.sprite} label={c.name} /><b>{c.name}</b><span>{c.desc}</span><em>技能：{c.skill.name} — {c.skill.desc}</em>
       </button>)}</div>
@@ -159,17 +162,24 @@ function VictoryArt({ classId }) {
 }
 
 function Tile({ tile, x, y }) {
-  const src = tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
+  const tileSprites = tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
+  const src = Array.isArray(tileSprites) ? tileSprites[tileVariantIndex(x, y, tileSprites.length)] : tileSprites;
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }} />;
+}
+
+function tileVariantIndex(x, y, count) {
+  return Math.abs((x * 73856093) ^ (y * 19349663) ^ ((x + y) * 83492791)) % count;
 }
 
 function Sprite({ entity, player, hp, summon, fx }) {
   const sprite = sprites[entity.sprite];
   const direction = entity.dir ?? 'down';
-  return <div className={`sprite ${player ? 'player' : ''} ${summon ? 'summon' : ''} ${fx ? 'fx' : ''}`} style={{ left: entity.x * TILE_SIZE, top: entity.y * TILE_SIZE }}>
+  const size = entity.size ?? 1;
+  const pixelSize = TILE_SIZE * size;
+  return <div className={`sprite ${player ? 'player' : ''} ${summon ? 'summon' : ''} ${fx ? 'fx' : ''} ${size > 1 ? 'large' : ''}`} style={{ left: entity.x * TILE_SIZE, top: entity.y * TILE_SIZE, width: pixelSize, height: pixelSize }}>
     {typeof sprite === 'string'
-      ? <img src={sprite} alt={entity.name} title={entity.name} />
-      : <span className={`spriteSheet dir-${direction}`} title={entity.name} style={{ backgroundImage: `url(${sprite.src})`, '--cols': sprite.cols, '--rows': sprite.rows, '--frame-ms': `${sprite.frameMs ?? 520}ms` }} />}
+      ? <img src={sprite} alt={entity.name} title={entity.name} style={{ width: pixelSize, height: pixelSize }} />
+      : <span className={`spriteSheet dir-${direction}`} title={entity.name} style={{ width: pixelSize, height: pixelSize, backgroundImage: `url(${sprite.src})`, '--tile-size': `${pixelSize}px`, '--cols': sprite.cols, '--rows': sprite.rows, '--frame-ms': `${sprite.frameMs ?? 520}ms` }} />}
     {hp && <small>{entity.hp}</small>}
   </div>;
 }

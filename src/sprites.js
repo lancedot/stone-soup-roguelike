@@ -83,9 +83,24 @@ export const sprites = {
     "rows": 4,
     "frameMs": 420
   },
-  "tile_floor": "assets/tile_floor.png",
-  "tile_wall": "assets/tile_wall.png",
-  "tile_stairs": "assets/tile_stairs.png",
+  "tile_floor": [
+    "assets/tile_floor_1.png",
+    "assets/tile_floor_2.png",
+    "assets/tile_floor_3.png",
+    "assets/tile_floor_4.png"
+  ],
+  "tile_wall": [
+    "assets/tile_wall_1.png",
+    "assets/tile_wall_2.png",
+    "assets/tile_wall_3.png",
+    "assets/tile_wall_4.png"
+  ],
+  "tile_stairs": [
+    "assets/tile_stairs_1.png",
+    "assets/tile_stairs_2.png",
+    "assets/tile_stairs_3.png",
+    "assets/tile_stairs_4.png"
+  ],
   "enemy_insomnia_lord": "assets/enemy_insomnia_lord.png",
   "item_warm_milk": "assets/item_warm_milk.png",
   "item_lettuce_leaf": "assets/item_lettuce_leaf.png",
