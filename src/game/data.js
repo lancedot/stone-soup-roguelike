@@ -65,10 +65,10 @@ export const ENEMY_TYPES = [
 ];
 
 export const ITEM_TYPES = [
-  { id: 'warm_milk', name: '热牛奶', kind: 'heal', amount: 10, sprite: 'item_warm_milk', desc: '回复 10 点生命。', weight: 5, minDepth: 1 },
-  { id: 'lettuce_leaf', name: '生菜叶', kind: 'heal', amount: 6, sprite: 'item_lettuce_leaf', desc: '回复 6 点生命。', weight: 4, minDepth: 1 },
-  { id: 'hard_baguette', name: '硬法棍', kind: 'weapon', attack: 1, sprite: 'item_hard_baguette', desc: '永久攻击 +1。', weight: 3, minDepth: 1 },
-  { id: 'dense_rye', name: '厚列巴', kind: 'armor', defense: 1, sprite: 'item_dense_rye', desc: '永久防御 +1。', weight: 3, minDepth: 1 },
-  { id: 'butter_block', name: '黄油块', kind: 'scroll', damage: 7, sprite: 'item_butter_block', desc: '让视野内敌人打滑受伤。', weight: 1, minDepth: 2 },
-  { id: 'ham_slice', name: '火腿片', kind: 'scroll', damage: 9, sprite: 'item_ham_slice', desc: '对视野内敌人造成伤害。', weight: 1, minDepth: 3 },
+  { id: 'warm_milk', name: '热牛奶', kind: 'heal', amount: 10, sprite: 'item_warm_milk', desc: '回复 10 点生命。', weight: 2, minDepth: 1, maxPerFloor: 1 },
+  { id: 'lettuce_leaf', name: '生菜叶', kind: 'heal', amount: 6, sprite: 'item_lettuce_leaf', desc: '回复 6 点生命。', weight: 2, minDepth: 1, maxPerFloor: 1 },
+  { id: 'hard_baguette', name: '硬法棍', kind: 'weapon', attack: 1, sprite: 'item_hard_baguette', desc: '永久攻击 +1。', weight: 4, minDepth: 1, maxPerFloor: 1 },
+  { id: 'dense_rye', name: '厚列巴', kind: 'armor', defense: 1, sprite: 'item_dense_rye', desc: '永久防御 +1。', weight: 4, minDepth: 1, maxPerFloor: 1 },
+  { id: 'butter_block', name: '黄油块', kind: 'scroll', damage: 7, sprite: 'item_butter_block', desc: '让视野内敌人打滑受伤。', weight: 2, minDepth: 2, maxPerFloor: 1 },
+  { id: 'ham_slice', name: '火腿片', kind: 'scroll', damage: 9, sprite: 'item_ham_slice', desc: '对视野内敌人造成伤害。', weight: 1, minDepth: 3, maxPerFloor: 1 },
 ];

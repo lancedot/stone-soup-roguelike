@@ -61,9 +61,24 @@ test('floor loot keeps scrolls rare and does not flood early game with ham slice
   for (let seed = 1; seed <= 40; seed++) {
     const state = newGame('breadKnight', seed);
     const scrolls = state.items.filter((i) => i.kind === 'scroll');
+    const heals = state.items.filter((i) => i.kind === 'heal');
+    const warmMilks = state.items.filter((i) => i.id === 'warm_milk');
     assert.ok(scrolls.length <= 1, `seed ${seed} spawned too many scrolls`);
+    assert.ok(heals.length <= 1, `seed ${seed} spawned too many healing items`);
+    assert.ok(warmMilks.length <= 1, `seed ${seed} spawned too many warm milks`);
     assert.equal(state.items.some((i) => i.id === 'ham_slice'), false, `seed ${seed} spawned early ham slice`);
   }
+});
+
+test('inventory refuses a third copy of the same consumable', () => {
+  const state = newGame('breadKnight', 41);
+  state.enemies = [];
+  const milk = { id: 'warm_milk', name: '热牛奶', kind: 'heal', amount: 10, sprite: 'item_warm_milk', desc: '回复 10 点生命。' };
+  state.player.inventory = [{ ...milk, uid: 'milk-a' }, { ...milk, uid: 'milk-b' }];
+  state.items = [{ ...milk, uid: 'milk-c', x: state.player.x, y: state.player.y }];
+  movePlayer(state, 0, 0);
+  assert.equal(state.player.inventory.filter((item) => item.id === 'warm_milk').length, 2);
+  assert.equal(state.items.some((item) => item.uid === 'milk-c'), true);
 });
 
 test('moving into adjacent enemy attacks it', () => {

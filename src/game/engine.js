@@ -2,6 +2,9 @@ import { CLASSES, ENEMY_TYPES, ITEM_TYPES, MAX_LOG, TILES } from './data.js';
 import { makeMap, isWalkable, randomFloor } from './map.js';
 import { distance, key, RNG } from './utils.js';
 
+const MAX_HEAL_ITEMS_PER_FLOOR = 1;
+const MAX_STACKED_CONSUMABLES = 2;
+
 export function newGame(classId = 'fighter', seed = Date.now()) {
   const rng = new RNG(seed);
   const cls = CLASSES[classId] ?? CLASSES.breadKnight;
@@ -67,10 +70,10 @@ function populate(state) {
     occupied.add(key(room.cx, room.cy));
   }
   const itemCount = state.depth >= 4 ? 2 : 3 + Math.floor(state.depth / 2);
-  let scrollsOnFloor = 0;
+  const itemCounts = {};
   for (let i = 0; i < itemCount; i++) {
-    const base = pickItemForDepth(state, scrollsOnFloor);
-    if (base.kind === 'scroll') scrollsOnFloor += 1;
+    const base = pickItemForDepth(state, itemCounts);
+    itemCounts[base.id] = (itemCounts[base.id] ?? 0) + 1;
     const pos = randomFloor(state.map, state.rng, occupied);
     occupied.add(key(pos.x, pos.y));
     state.items.push({ ...base, x: pos.x, y: pos.y, uid: `${base.id}-${state.depth}-${i}-${state.rng.int(1, 9999)}` });
@@ -152,6 +155,11 @@ function pickUpAtPlayer(state) {
   if (idx >= 0) {
     const [item] = state.items.splice(idx, 1);
     if (state.player.inventory.length < 8) {
+      if (isConsumable(item) && carriedCount(state, item.id) >= MAX_STACKED_CONSUMABLES) {
+        addLog(state, `${item.name}已经带够了，先留在原地。`);
+        state.items.push(item);
+        return;
+      }
       state.player.inventory.push(item);
       addLog(state, `捡起：${item.name}。`);
     } else {
@@ -393,10 +401,12 @@ function addFx(state, sprite, x, y) {
   state.fx = [{ id: `${sprite}-${state.rng.int(1, 999999)}`, name: '技能效果', sprite, x, y }];
 }
 
-function pickItemForDepth(state, scrollsOnFloor) {
+function pickItemForDepth(state, itemCounts) {
   const options = ITEM_TYPES.filter((item) => {
     if ((item.minDepth ?? 1) > state.depth) return false;
-    if (item.kind === 'scroll' && scrollsOnFloor >= 1) return false;
+    if ((itemCounts[item.id] ?? 0) >= (item.maxPerFloor ?? Infinity)) return false;
+    if (item.kind === 'scroll' && countItemsByKind(itemCounts, 'scroll') >= 1) return false;
+    if (item.kind === 'heal' && countItemsByKind(itemCounts, 'heal') >= MAX_HEAL_ITEMS_PER_FLOOR) return false;
     return true;
   });
   const total = options.reduce((sum, item) => sum + (item.weight ?? 1), 0);
@@ -406,6 +416,20 @@ function pickItemForDepth(state, scrollsOnFloor) {
     if (roll <= 0) return item;
   }
   return options[options.length - 1];
+}
+
+function countItemsByKind(itemCounts, kind) {
+  return ITEM_TYPES
+    .filter((item) => item.kind === kind)
+    .reduce((sum, item) => sum + (itemCounts[item.id] ?? 0), 0);
+}
+
+function isConsumable(item) {
+  return item.kind === 'heal' || item.kind === 'scroll';
+}
+
+function carriedCount(state, itemId) {
+  return state.player.inventory.filter((item) => item.id === itemId).length;
 }
 
 function dirFromDelta(dx, dy) {
