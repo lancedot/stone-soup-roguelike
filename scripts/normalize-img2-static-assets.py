@@ -76,12 +76,17 @@ def normalize_icon(cell: Image.Image, frame_size=STATIC_FRAME, pad=5) -> Image.I
     return out
 
 
-def normalize_tile(cell: Image.Image, frame_size=STATIC_FRAME, pad=1) -> Image.Image:
+def normalize_tile(cell: Image.Image, frame_size=STATIC_FRAME, pad=1, seamless=False) -> Image.Image:
     bbox = alpha_bbox(cell)
     out = Image.new("RGBA", (frame_size, frame_size), (0, 0, 0, 0))
     if not bbox:
         return out
     content = cell.crop(bbox)
+    if seamless:
+        margin_x = max(1, round(content.width * 0.18))
+        margin_y = max(1, round(content.height * 0.18))
+        content = content.crop((margin_x, margin_y, content.width - margin_x, content.height - margin_y))
+        return content.resize((frame_size, frame_size), Image.Resampling.LANCZOS)
     scale = min((frame_size - pad * 2) / content.width, (frame_size - pad * 2) / content.height)
     size = (max(1, round(content.width * scale)), max(1, round(content.height * scale)))
     content = content.resize(size, Image.Resampling.LANCZOS)
@@ -133,7 +138,7 @@ def build_terrain_variants():
                 round((col + 1) * cell_w),
                 round((row + 1) * cell_h),
             ))
-            tile = normalize_tile(cell)
+            tile = normalize_tile(cell, pad=0 if name == "tile_floor" else 1, seamless=name == "tile_floor")
             save_png(tile, ASSET_DIR / f"{name}_{col + 1}.png", colors=128)
             if col == 0:
                 save_png(tile, ASSET_DIR / f"{name}.png", colors=128)

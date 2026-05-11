@@ -55,6 +55,7 @@ export function enterDepth(state, depth) {
 
 function populate(state) {
   const occupied = new Set([key(state.player.x, state.player.y)]);
+  reservePlayerBreathingRoom(state, occupied);
   if (state.depth >= 4) {
     const boss = ENEMY_TYPES.find((e) => e.boss);
     const room = state.map.rooms[state.map.rooms.length - 1];
@@ -64,7 +65,7 @@ function populate(state) {
     addOccupiedFootprint(occupied, { x, y, size: 2 });
   }
 
-  const enemyCount = state.depth >= 4 ? 3 : 5 + state.depth;
+  const enemyCount = state.map.width <= 20 ? (state.depth >= 4 ? 2 : 2 + state.depth) : (state.depth >= 4 ? 3 : 5 + state.depth);
   for (let i = 0; i < enemyCount; i++) {
     const options = ENEMY_TYPES.filter((e) => !e.boss && e.depth <= state.depth + 1);
     const base = state.rng.pick(options);
@@ -72,7 +73,7 @@ function populate(state) {
     occupied.add(key(pos.x, pos.y));
     state.enemies.push({ ...base, x: pos.x, y: pos.y, hp: base.hp + state.depth * 2, maxHp: base.hp + state.depth * 2 });
   }
-  const itemCount = state.depth >= 4 ? 2 : 3 + Math.floor(state.depth / 2);
+  const itemCount = state.map.width <= 20 ? (state.depth >= 4 ? 2 : 2 + Math.floor(state.depth / 2)) : (state.depth >= 4 ? 2 : 3 + Math.floor(state.depth / 2));
   const itemCounts = {};
   for (let i = 0; i < itemCount; i++) {
     const base = pickItemForDepth(state, itemCounts);
@@ -150,6 +151,15 @@ function killEnemy(state, enemy) {
   if (enemy.id === 'insomnia_lord' && state.depth >= 4) {
     state.status = 'won';
     addLog(state, '失眠魔王碎成一地闹钟。你们夺回了安眠圣杯！');
+  }
+}
+
+function reservePlayerBreathingRoom(state, occupied) {
+  const radius = state.map.width <= 20 ? 1 : 0;
+  for (let y = state.player.y - radius; y <= state.player.y + radius; y++) {
+    for (let x = state.player.x - radius; x <= state.player.x + radius; x++) {
+      if (x >= 0 && y >= 0 && x < state.map.width && y < state.map.height) occupied.add(key(x, y));
+    }
   }
 }
 

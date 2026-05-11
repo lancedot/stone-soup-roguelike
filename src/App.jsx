@@ -113,7 +113,7 @@ export default function App() {
 
   return <main className="game">
     <section className="board" style={{ width: state.map.width * TILE_SIZE, height: state.map.height * TILE_SIZE }}>
-      {state.map.tiles.flatMap((row, y) => row.map((tile, x) => <Tile key={`${x},${y}`} tile={tile} x={x} y={y} />))}
+      {state.map.tiles.flatMap((row, y) => row.map((tile, x) => <Tile key={`${x},${y}`} map={state.map} tile={tile} x={x} y={y} />))}
       {state.items.map((item) => <Sprite key={item.uid} entity={item} />)}
       {state.summons.map((summon) => <Sprite key={summon.id} entity={summon} hp summon />)}
       {state.enemies.map((enemy, i) => <Sprite key={`${enemy.id}-${i}-${enemy.x}-${enemy.y}`} entity={enemy} hp />)}
@@ -162,10 +162,20 @@ function VictoryArt({ classId }) {
   return <img className="victoryArt" src={src} alt={`${cls.name}通关结算`} />;
 }
 
-function Tile({ tile, x, y }) {
+function Tile({ map, tile, x, y }) {
+  if (tile === TILES.wall && !isVisibleWall(map, x, y)) return null;
   const tileSprites = tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
   const src = Array.isArray(tileSprites) ? tileSprites[tileVariantIndex(x, y, tileSprites.length)] : tileSprites;
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }} />;
+}
+
+function isVisibleWall(map, x, y) {
+  const neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  return neighbors.some(([dx, dy]) => {
+    const nx = x + dx;
+    const ny = y + dy;
+    return nx >= 0 && ny >= 0 && nx < map.width && ny < map.height && map.tiles[ny][nx] !== TILES.wall;
+  });
 }
 
 function tileVariantIndex(x, y, count) {

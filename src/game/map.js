@@ -5,10 +5,11 @@ export function makeMap(rng, depth = 1) {
   const tiles = Array.from({ length: MAP_HEIGHT }, () => Array(MAP_WIDTH).fill(TILES.wall));
   const rooms = [];
   const attempts = 90;
+  const targetRooms = MAP_WIDTH <= 20 ? 5 : 10;
 
-  for (let i = 0; i < attempts && rooms.length < 10; i++) {
-    const w = rng.int(5, 10);
-    const h = rng.int(4, 8);
+  for (let i = 0; i < attempts && rooms.length < targetRooms; i++) {
+    const w = rng.int(4, MAP_WIDTH <= 20 ? 7 : 10);
+    const h = rng.int(3, MAP_WIDTH <= 20 ? 5 : 8);
     const x = rng.int(1, MAP_WIDTH - w - 2);
     const y = rng.int(1, MAP_HEIGHT - h - 2);
     const room = { x, y, w, h, cx: Math.floor(x + w / 2), cy: Math.floor(y + h / 2) };
