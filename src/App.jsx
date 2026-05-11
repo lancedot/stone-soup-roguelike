@@ -95,6 +95,14 @@ export default function App() {
     return () => clearTimeout(id);
   }, [started]);
 
+  useEffect(() => {
+    if (!state.fx?.length) return undefined;
+    const id = setTimeout(() => {
+      setState((old) => old.fx?.length ? { ...old, fx: [] } : old);
+    }, 520);
+    return () => clearTimeout(id);
+  }, [state.fx]);
+
   if (!started) {
     return <main className="menu">
       <h1>面包小队</h1>
@@ -164,9 +172,12 @@ function VictoryArt({ classId }) {
 
 function Tile({ map, tile, x, y }) {
   if (tile === TILES.wall && !isVisibleWall(map, x, y)) return null;
-  const tileSprites = tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
-  const src = Array.isArray(tileSprites) ? tileSprites[tileVariantIndex(x, y, tileSprites.length)] : tileSprites;
-  return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }} />;
+  const wallOrientation = tile === TILES.wall ? wallOrientationFor(map, x, y) : null;
+  const tileSprites = wallOrientation ? sprites[`tile_wall_${wallOrientation}`] : tile === TILES.wall ? sprites.tile_wall : tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor;
+  const variant = tileVariantIndex(x, y, tileSprites.length, map.visualSeed ?? 1);
+  const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
+  const transform = tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined;
+  return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
 }
 
 function isVisibleWall(map, x, y) {
@@ -178,8 +189,33 @@ function isVisibleWall(map, x, y) {
   });
 }
 
-function tileVariantIndex(x, y, count) {
-  return Math.abs((x * 73856093) ^ (y * 19349663) ^ ((x + y) * 83492791)) % count;
+function wallOrientationFor(map, x, y) {
+  if (isOpenTile(map, x, y + 1)) return 'north';
+  if (isOpenTile(map, x, y - 1)) return 'south';
+  if (isOpenTile(map, x + 1, y)) return 'west';
+  if (isOpenTile(map, x - 1, y)) return 'east';
+  return 'north';
+}
+
+function isOpenTile(map, x, y) {
+  return x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y][x] !== TILES.wall;
+}
+
+function tileVariantIndex(x, y, count, seed) {
+  return hashTile(x + Math.floor(y / 2), y + Math.floor(x / 3), seed) % count;
+}
+
+function floorTransform(x, y, seed) {
+  const h = hashTile(x, y, seed + 17);
+  const rotation = [0, 90, 180, 270][h % 4];
+  const flip = h % 7 === 0 ? ' scaleX(-1)' : h % 11 === 0 ? ' scaleY(-1)' : '';
+  return `rotate(${rotation}deg)${flip}`;
+}
+
+function hashTile(x, y, seed) {
+  let h = (seed ^ (x * 374761393) ^ (y * 668265263)) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
 }
 
 function Sprite({ entity, player, hp, summon, fx }) {

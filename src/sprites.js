@@ -95,6 +95,30 @@ export const sprites = {
     "assets/tile_wall_3.png",
     "assets/tile_wall_4.png"
   ],
+  "tile_wall_north": [
+    "assets/tile_wall_north_1.png",
+    "assets/tile_wall_north_2.png",
+    "assets/tile_wall_north_3.png",
+    "assets/tile_wall_north_4.png"
+  ],
+  "tile_wall_south": [
+    "assets/tile_wall_south_1.png",
+    "assets/tile_wall_south_2.png",
+    "assets/tile_wall_south_3.png",
+    "assets/tile_wall_south_4.png"
+  ],
+  "tile_wall_west": [
+    "assets/tile_wall_west_1.png",
+    "assets/tile_wall_west_2.png",
+    "assets/tile_wall_west_3.png",
+    "assets/tile_wall_west_4.png"
+  ],
+  "tile_wall_east": [
+    "assets/tile_wall_east_1.png",
+    "assets/tile_wall_east_2.png",
+    "assets/tile_wall_east_3.png",
+    "assets/tile_wall_east_4.png"
+  ],
   "tile_stairs": [
     "assets/tile_stairs_1.png",
     "assets/tile_stairs_2.png",

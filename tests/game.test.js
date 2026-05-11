@@ -228,7 +228,7 @@ test('four classes have rough victory CG assets and skill FX sheets', () => {
 });
 
 test('terrain sprites use four img2 variants for less repetitive dungeon tiling', () => {
-  for (const id of ['tile_floor', 'tile_wall', 'tile_stairs']) {
+  for (const id of ['tile_floor', 'tile_wall', 'tile_stairs', 'tile_wall_north', 'tile_wall_south', 'tile_wall_west', 'tile_wall_east']) {
     assert.equal(Array.isArray(sprites[id]), true, `${id} should declare terrain variants`);
     assert.equal(sprites[id].length, 4);
     assert.ok(sprites[id].every((src) => src.endsWith('.png')), `${id} variants should be PNG assets`);

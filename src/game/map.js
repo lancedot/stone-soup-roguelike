@@ -35,7 +35,7 @@ export function makeMap(rng, depth = 1) {
     tiles[endRoom.cy][endRoom.cx] = TILES.stairs;
   }
 
-  return { width: MAP_WIDTH, height: MAP_HEIGHT, tiles, rooms, start, depth };
+  return { width: MAP_WIDTH, height: MAP_HEIGHT, tiles, rooms, start, depth, visualSeed: rng.int(1, 999999) };
 }
 
 function carveRoom(tiles, room) {
