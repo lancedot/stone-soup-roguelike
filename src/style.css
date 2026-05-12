@@ -104,14 +104,15 @@ kbd { background: #ffd37a; color: #1b1208; border-radius: 5px; padding: 2px 7px;
   }
   .playArea { width: 100%; }
   .boardViewport {
-    width: calc(100vw - 20px);
+    width: 78vw;
     max-width: 1280px;
     aspect-ratio: 20 / 13;
+    margin: 0 auto;
     overflow: hidden;
     box-shadow: 0 8px 28px #0008;
   }
   .board {
-    transform: scale(calc((100vw - 20px) / 1280));
+    transform: scale(calc(78vw / 1280));
     transform-origin: top left;
     box-shadow: none;
   }
