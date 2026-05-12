@@ -250,8 +250,7 @@ function tileVariantIndex(x, y, count, seed) {
 }
 
 function wallVariantIndex(orientation, x, y, count, seed) {
-  const maskOffset = Number.isFinite(Number(orientation)) ? Number(orientation) : 0;
-  return hashTile(x + maskOffset, y, seed + 31) % count;
+  return 0;
 }
 
 function floorFillRects(wallSpec) {
