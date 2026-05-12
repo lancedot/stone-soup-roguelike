@@ -35,33 +35,11 @@ CG_SOURCES = {
 }
 
 TERRAIN_SOURCE = "terrain_variants_img2_raw.png"
-WALL_ORIENTED_SOURCE = "wall_oriented_variants_img2_raw.png"
-WALL_CORNER_SOURCE = "wall_corner_variants_img2_raw.png"
+WALL_BLOCK_SOURCE = "wall_block_variants_img2_raw.png"
 TERRAIN_ROWS = [
     "tile_floor",
-    "tile_wall",
     "tile_stairs",
 ]
-WALL_ORIENTED_ROWS = [
-    "tile_wall_north",
-    "tile_wall_south",
-    "tile_wall_west",
-    "tile_wall_east",
-]
-WALL_CORNER_NAMES = [
-    "tile_wall_corner_nw",
-    "tile_wall_corner_ne",
-    "tile_wall_corner_sw",
-    "tile_wall_corner_se",
-]
-WALL_CORNER_KEYS = ["nw", "ne", "sw", "se"]
-WALL_CORNER_CAP_SIZE = STATIC_FRAME
-WALL_AUTOTILE_BITS = {
-    "north": 1,
-    "south": 2,
-    "west": 4,
-    "east": 8,
-}
 
 
 def remove_key(im: Image.Image, key=(0, 255, 0)) -> Image.Image:
@@ -152,7 +130,12 @@ def build_terrain_variants():
     cols, rows = 4, 3
     cell_w = atlas.width / cols
     cell_h = atlas.height / rows
-    for row, name in enumerate(TERRAIN_ROWS):
+    terrain_row_indexes = {
+        "tile_floor": 0,
+        "tile_stairs": 2,
+    }
+    for name in TERRAIN_ROWS:
+        row = terrain_row_indexes[name]
         for col in range(cols):
             cell = atlas.crop((
                 round(col * cell_w),
@@ -166,110 +149,29 @@ def build_terrain_variants():
                 save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
 
 
-def build_oriented_wall_variants():
-    wall_path = SOURCE_DIR / WALL_ORIENTED_SOURCE
+def build_wall_block_variants():
+    wall_path = SOURCE_DIR / WALL_BLOCK_SOURCE
     if not wall_path.exists():
-        return
+        raise FileNotFoundError(
+            f"Missing img2 wall source: {wall_path}. Generate a 4-cell wall block atlas with img2 before normalizing assets."
+        )
 
     atlas = remove_key(Image.open(wall_path))
-    cols, rows = 4, 4
+    cols = 4
+    rows = 1
     cell_w = atlas.width / cols
     cell_h = atlas.height / rows
-    for row, name in enumerate(WALL_ORIENTED_ROWS):
-        for col in range(cols):
-            cell = atlas.crop((
-                round(col * cell_w),
-                round(row * cell_h),
-                round((col + 1) * cell_w),
-                round((row + 1) * cell_h),
-            ))
-            tile = normalize_tile(cell, pad=1)
-            save_png(tile, ASSET_DIR / f"{name}_{col + 1}.png", colors=128)
-
-
-def build_wall_corners():
-    corner_path = SOURCE_DIR / WALL_CORNER_SOURCE
-    if not corner_path.exists():
-        return
-
-    atlas = remove_key(Image.open(corner_path))
-    cols, rows = 2, 2
-    cell_w = atlas.width / cols
-    cell_h = atlas.height / rows
-    for idx, name in enumerate(WALL_CORNER_NAMES):
-        col = idx % cols
-        row = idx // cols
+    for col in range(cols):
         cell = atlas.crop((
             round(col * cell_w),
-            round(row * cell_h),
+            0,
             round((col + 1) * cell_w),
-            round((row + 1) * cell_h),
+            round(cell_h),
         ))
-        tile = compact_corner_cap(normalize_tile(cell, pad=0), WALL_CORNER_KEYS[idx], size=WALL_CORNER_CAP_SIZE)
-        save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
-
-
-def shifted(im: Image.Image, dx=0, dy=0) -> Image.Image:
-    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    out.alpha_composite(im, (dx, dy))
-    return out
-
-
-def keep_box(im: Image.Image, box) -> Image.Image:
-    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    out.alpha_composite(im.crop(box), (box[0], box[1]))
-    return out
-
-
-def side_column_from_corner(im: Image.Image, side: str) -> Image.Image:
-    half = STATIC_FRAME // 2
-    source_x = 0 if side == "west" else half
-    column = im.crop((source_x, 12, source_x + half, 52)).resize((half, STATIC_FRAME), Image.Resampling.LANCZOS)
-    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    out.alpha_composite(column, (source_x, 0))
-    return out
-
-
-def build_wall_autotiles():
-    corner_nw = Image.open(ASSET_DIR / "tile_wall_corner_nw.png").convert("RGBA")
-    corner_ne = Image.open(ASSET_DIR / "tile_wall_corner_ne.png").convert("RGBA")
-    side_west = side_column_from_corner(corner_nw, "west")
-    side_east = side_column_from_corner(corner_ne, "east")
-    for variant in range(1, 5):
-        north = Image.open(ASSET_DIR / f"tile_wall_north_{variant}.png").convert("RGBA")
-        south = Image.open(ASSET_DIR / f"tile_wall_south_{variant}.png").convert("RGBA")
-        pieces = {
-            "north": keep_box(north, (0, 0, STATIC_FRAME, 48)),
-            "south": shifted(south, dy=STATIC_FRAME // 2),
-            "west": side_west,
-            "east": side_east,
-        }
-        for mask in range(1, 16):
-            tile = Image.new("RGBA", (STATIC_FRAME, STATIC_FRAME), (0, 0, 0, 0))
-            for direction in ["north", "south", "west", "east"]:
-                if mask & WALL_AUTOTILE_BITS[direction]:
-                    tile.alpha_composite(pieces[direction])
-            save_png(tile, ASSET_DIR / f"tile_wall_auto_{mask:02d}_{variant}.png", colors=128)
-
-
-def compact_corner_cap(tile: Image.Image, corner: str, size=32) -> Image.Image:
-    tile = tile.convert("RGBA")
-    out = Image.new("RGBA", tile.size, (0, 0, 0, 0))
-    w, h = tile.size
-    boxes = {
-        "nw": (0, 0, size, size),
-        "ne": (w - size, 0, w, size),
-        "sw": (0, h - size, size, h),
-        "se": (w - size, h - size, w, h),
-    }
-    dst = {
-        "nw": (0, 0),
-        "ne": (w - size, 0),
-        "sw": (0, h - size),
-        "se": (w - size, h - size),
-    }
-    out.alpha_composite(tile.crop(boxes[corner]), dst[corner])
-    return out
+        tile = normalize_tile(cell, pad=0)
+        save_png(tile, ASSET_DIR / f"tile_wall_{col + 1}.png", colors=128)
+        if col == 0:
+            save_png(tile, ASSET_DIR / "tile_wall.png", colors=128)
 
 
 def build_boss():
@@ -302,9 +204,7 @@ def build_cgs():
 def main():
     build_static_icons()
     build_terrain_variants()
-    build_oriented_wall_variants()
-    build_wall_corners()
-    build_wall_autotiles()
+    build_wall_block_variants()
     build_boss()
     build_cgs()
     print("normalized img2 static assets")

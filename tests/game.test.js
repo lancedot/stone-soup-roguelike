@@ -228,20 +228,13 @@ test('four classes have rough victory CG assets and skill FX sheets', () => {
 });
 
 test('terrain sprites use four img2 variants for less repetitive dungeon tiling', () => {
-  for (const id of ['tile_floor', 'tile_wall', 'tile_stairs', 'tile_wall_north', 'tile_wall_south', 'tile_wall_west', 'tile_wall_east']) {
+  for (const id of ['tile_floor', 'tile_wall', 'tile_stairs']) {
     assert.equal(Array.isArray(sprites[id]), true, `${id} should declare terrain variants`);
     assert.equal(sprites[id].length, 4);
     assert.ok(sprites[id].every((src) => src.endsWith('.png')), `${id} variants should be PNG assets`);
   }
-  for (let mask = 1; mask <= 15; mask++) {
-    assert.equal(Array.isArray(sprites.tile_wall_auto[String(mask)]), true, `wall autotile mask ${mask} should declare variants`);
-    assert.equal(sprites.tile_wall_auto[String(mask)].length, 4);
-    assert.ok(sprites.tile_wall_auto[String(mask)].every((src) => src.endsWith('.png')), `wall autotile mask ${mask} variants should be PNG assets`);
-  }
-  for (const id of ['tile_wall_corner_nw', 'tile_wall_corner_ne', 'tile_wall_corner_sw', 'tile_wall_corner_se']) {
-    assert.equal(typeof sprites[id], 'string', `${id} should declare a corner wall PNG`);
-    assert.ok(sprites[id].endsWith('.png'));
-  }
+  assert.equal('tile_wall_auto' in sprites, false);
+  assert.equal(Object.keys(sprites).some((id) => id.startsWith('tile_wall_corner_')), false);
 });
 
 test('successful skills create visible FX while failed skills do not', () => {

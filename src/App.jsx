@@ -190,97 +190,30 @@ function VictoryArt({ classId }) {
 }
 
 function Tile({ map, tile, x, y }) {
-  const wallSpec = tile === TILES.wall ? wallTileSpec(map, x, y) : null;
-  if (tile === TILES.wall && !wallSpec) return null;
-  const tileSprites = wallSpec?.sprites ?? (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
+  if (tile === TILES.wall && !isWallVisible(map, x, y)) return null;
+  const tileSprites = tile === TILES.wall ? sprites.tile_wall : (tile === TILES.stairs ? sprites.tile_stairs : sprites.tile_floor);
   const spriteCount = Array.isArray(tileSprites) ? tileSprites.length : 1;
-  const variant = wallSpec ? wallVariantIndex(wallSpec.mask ?? wallSpec.orientation, x, y, spriteCount, map.visualSeed ?? 1) : tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
+  const variant = tileVariantIndex(x, y, spriteCount, map.visualSeed ?? 1);
   const src = Array.isArray(tileSprites) ? tileSprites[variant] : tileSprites;
   const transform = tile === TILES.floor ? floorTransform(x, y, map.visualSeed ?? 1) : undefined;
-  if (wallSpec) {
-    const floorSprites = sprites.tile_floor;
-    const floorSrc = floorSprites[tileVariantIndex(x, y, floorSprites.length, map.visualSeed ?? 1)];
-    return <div className="tile tileComposite" style={{ left: x * TILE_SIZE, top: y * TILE_SIZE }}>
-      {floorFillRects(wallSpec).map((rect) => <span key={`${rect.x},${rect.y}`} className="floorPatch" style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, backgroundImage: `url(${floorSrc})`, backgroundPosition: `-${rect.x}px -${rect.y}px` }} />)}
-      <img className="wallLayer" src={src} alt={tile} />
-    </div>;
-  }
   return <img className="tile" src={src} alt={tile} style={{ left: x * TILE_SIZE, top: y * TILE_SIZE, transform }} />;
 }
 
-function wallTileSpec(map, x, y) {
-  const edges = cardinalWallEdges(map, x, y);
-  const mask = wallMaskFor(edges);
-  if (mask) return { type: 'auto', mask, edges, sprites: sprites.tile_wall_auto[String(mask)] };
-  const corner = wallCornerFor(map, x, y);
-  if (corner) return { type: 'corner', orientation: `corner_${corner}`, sprites: sprites[`tile_wall_corner_${corner}`] };
-  return null;
-}
-
-function cardinalWallEdges(map, x, y) {
-  return [
-    ['north', x, y + 1],
-    ['south', x, y - 1],
-    ['west', x + 1, y],
-    ['east', x - 1, y],
-  ].filter(([, ox, oy]) => isOpenTile(map, ox, oy)).map(([orientation]) => orientation);
-}
-
-function wallMaskFor(edges) {
-  const bits = { north: 1, south: 2, west: 4, east: 8 };
-  return edges.reduce((mask, edge) => mask | bits[edge], 0);
-}
-
-function wallCornerFor(map, x, y) {
-  const corners = [
-    ['nw', x + 1, y + 1, [['north', x + 1, y], ['west', x, y + 1]]],
-    ['ne', x - 1, y + 1, [['north', x - 1, y], ['east', x, y + 1]]],
-    ['sw', x + 1, y - 1, [['south', x + 1, y], ['west', x, y - 1]]],
-    ['se', x - 1, y - 1, [['south', x - 1, y], ['east', x, y - 1]]],
-  ].filter(([, cx, cy, arms]) => isOpenTile(map, cx, cy) && arms.every(([orientation, ax, ay]) => cardinalWallEdges(map, ax, ay).includes(orientation)));
-  return corners.length === 1 ? corners[0][0] : null;
-}
-
-function isOpenTile(map, x, y) {
-  return x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y][x] !== TILES.wall;
+function isWallVisible(map, x, y) {
+  for (let oy = -1; oy <= 1; oy++) {
+    for (let ox = -1; ox <= 1; ox++) {
+      if ((ox !== 0 || oy !== 0) && isOpenTile(map, x + ox, y + oy)) return true;
+    }
+  }
+  return false;
 }
 
 function tileVariantIndex(x, y, count, seed) {
   return hashTile(x + Math.floor(y / 2), y + Math.floor(x / 3), seed) % count;
 }
 
-function wallVariantIndex(orientation, x, y, count, seed) {
-  return 0;
-}
-
-function floorFillRects(wallSpec) {
-  const half = TILE_SIZE / 2;
-  const cardinal = {
-    north: [{ x: 0, y: half, w: TILE_SIZE, h: half }],
-    south: [{ x: 0, y: 0, w: TILE_SIZE, h: half }],
-    west: [{ x: half, y: 0, w: half, h: TILE_SIZE }],
-    east: [{ x: 0, y: 0, w: half, h: TILE_SIZE }],
-  };
-  const corners = {
-    corner_nw: [{ x: half, y: half, w: half, h: half }],
-    corner_ne: [{ x: 0, y: half, w: half, h: half }],
-    corner_sw: [{ x: half, y: 0, w: half, h: half }],
-    corner_se: [{ x: 0, y: 0, w: half, h: half }],
-  };
-  const rects = wallSpec.edges
-    ? wallSpec.edges.flatMap((edge) => cardinal[edge])
-    : corners[wallSpec.orientation] ?? [];
-  return uniqueRects(rects);
-}
-
-function uniqueRects(rects) {
-  const seen = new Set();
-  return rects.filter((rect) => {
-    const key = `${rect.x},${rect.y},${rect.w},${rect.h}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function isOpenTile(map, x, y) {
+  return x >= 0 && y >= 0 && x < map.width && y < map.height && map.tiles[y][x] !== TILES.wall;
 }
 
 function floorTransform(x, y, seed) {
