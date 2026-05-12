@@ -119,6 +119,98 @@ export const sprites = {
     "assets/tile_wall_east_3.png",
     "assets/tile_wall_east_4.png"
   ],
+  "tile_wall_auto": {
+    "1": [
+      "assets/tile_wall_auto_01_1.png",
+      "assets/tile_wall_auto_01_2.png",
+      "assets/tile_wall_auto_01_3.png",
+      "assets/tile_wall_auto_01_4.png"
+    ],
+    "2": [
+      "assets/tile_wall_auto_02_1.png",
+      "assets/tile_wall_auto_02_2.png",
+      "assets/tile_wall_auto_02_3.png",
+      "assets/tile_wall_auto_02_4.png"
+    ],
+    "3": [
+      "assets/tile_wall_auto_03_1.png",
+      "assets/tile_wall_auto_03_2.png",
+      "assets/tile_wall_auto_03_3.png",
+      "assets/tile_wall_auto_03_4.png"
+    ],
+    "4": [
+      "assets/tile_wall_auto_04_1.png",
+      "assets/tile_wall_auto_04_2.png",
+      "assets/tile_wall_auto_04_3.png",
+      "assets/tile_wall_auto_04_4.png"
+    ],
+    "5": [
+      "assets/tile_wall_auto_05_1.png",
+      "assets/tile_wall_auto_05_2.png",
+      "assets/tile_wall_auto_05_3.png",
+      "assets/tile_wall_auto_05_4.png"
+    ],
+    "6": [
+      "assets/tile_wall_auto_06_1.png",
+      "assets/tile_wall_auto_06_2.png",
+      "assets/tile_wall_auto_06_3.png",
+      "assets/tile_wall_auto_06_4.png"
+    ],
+    "7": [
+      "assets/tile_wall_auto_07_1.png",
+      "assets/tile_wall_auto_07_2.png",
+      "assets/tile_wall_auto_07_3.png",
+      "assets/tile_wall_auto_07_4.png"
+    ],
+    "8": [
+      "assets/tile_wall_auto_08_1.png",
+      "assets/tile_wall_auto_08_2.png",
+      "assets/tile_wall_auto_08_3.png",
+      "assets/tile_wall_auto_08_4.png"
+    ],
+    "9": [
+      "assets/tile_wall_auto_09_1.png",
+      "assets/tile_wall_auto_09_2.png",
+      "assets/tile_wall_auto_09_3.png",
+      "assets/tile_wall_auto_09_4.png"
+    ],
+    "10": [
+      "assets/tile_wall_auto_10_1.png",
+      "assets/tile_wall_auto_10_2.png",
+      "assets/tile_wall_auto_10_3.png",
+      "assets/tile_wall_auto_10_4.png"
+    ],
+    "11": [
+      "assets/tile_wall_auto_11_1.png",
+      "assets/tile_wall_auto_11_2.png",
+      "assets/tile_wall_auto_11_3.png",
+      "assets/tile_wall_auto_11_4.png"
+    ],
+    "12": [
+      "assets/tile_wall_auto_12_1.png",
+      "assets/tile_wall_auto_12_2.png",
+      "assets/tile_wall_auto_12_3.png",
+      "assets/tile_wall_auto_12_4.png"
+    ],
+    "13": [
+      "assets/tile_wall_auto_13_1.png",
+      "assets/tile_wall_auto_13_2.png",
+      "assets/tile_wall_auto_13_3.png",
+      "assets/tile_wall_auto_13_4.png"
+    ],
+    "14": [
+      "assets/tile_wall_auto_14_1.png",
+      "assets/tile_wall_auto_14_2.png",
+      "assets/tile_wall_auto_14_3.png",
+      "assets/tile_wall_auto_14_4.png"
+    ],
+    "15": [
+      "assets/tile_wall_auto_15_1.png",
+      "assets/tile_wall_auto_15_2.png",
+      "assets/tile_wall_auto_15_3.png",
+      "assets/tile_wall_auto_15_4.png"
+    ]
+  },
   "tile_wall_corner_nw": "assets/tile_wall_corner_nw.png",
   "tile_wall_corner_ne": "assets/tile_wall_corner_ne.png",
   "tile_wall_corner_sw": "assets/tile_wall_corner_sw.png",

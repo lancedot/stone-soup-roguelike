@@ -56,6 +56,12 @@ WALL_CORNER_NAMES = [
 ]
 WALL_CORNER_KEYS = ["nw", "ne", "sw", "se"]
 WALL_CORNER_CAP_SIZE = STATIC_FRAME
+WALL_AUTOTILE_BITS = {
+    "north": 1,
+    "south": 2,
+    "west": 4,
+    "east": 8,
+}
 
 
 def remove_key(im: Image.Image, key=(0, 255, 0)) -> Image.Image:
@@ -203,6 +209,30 @@ def build_wall_corners():
         save_png(tile, ASSET_DIR / f"{name}.png", colors=128)
 
 
+def shifted(im: Image.Image, dx=0, dy=0) -> Image.Image:
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    out.alpha_composite(im, (dx, dy))
+    return out
+
+
+def build_wall_autotiles():
+    for variant in range(1, 5):
+        north = Image.open(ASSET_DIR / f"tile_wall_north_{variant}.png").convert("RGBA")
+        south = Image.open(ASSET_DIR / f"tile_wall_south_{variant}.png").convert("RGBA")
+        pieces = {
+            "north": north,
+            "south": shifted(south, dy=STATIC_FRAME // 2),
+            "west": south.rotate(-90, expand=False),
+            "east": south.rotate(90, expand=False),
+        }
+        for mask in range(1, 16):
+            tile = Image.new("RGBA", (STATIC_FRAME, STATIC_FRAME), (0, 0, 0, 0))
+            for direction in ["north", "south", "west", "east"]:
+                if mask & WALL_AUTOTILE_BITS[direction]:
+                    tile.alpha_composite(pieces[direction])
+            save_png(tile, ASSET_DIR / f"tile_wall_auto_{mask:02d}_{variant}.png", colors=128)
+
+
 def compact_corner_cap(tile: Image.Image, corner: str, size=32) -> Image.Image:
     tile = tile.convert("RGBA")
     out = Image.new("RGBA", tile.size, (0, 0, 0, 0))
@@ -255,6 +285,7 @@ def main():
     build_terrain_variants()
     build_oriented_wall_variants()
     build_wall_corners()
+    build_wall_autotiles()
     build_boss()
     build_cgs()
     print("normalized img2 static assets")
