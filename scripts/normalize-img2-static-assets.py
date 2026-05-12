@@ -215,15 +215,25 @@ def shifted(im: Image.Image, dx=0, dy=0) -> Image.Image:
     return out
 
 
+def keep_box(im: Image.Image, box) -> Image.Image:
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    out.alpha_composite(im.crop(box), (box[0], box[1]))
+    return out
+
+
 def build_wall_autotiles():
+    corner_nw = Image.open(ASSET_DIR / "tile_wall_corner_nw.png").convert("RGBA")
+    corner_ne = Image.open(ASSET_DIR / "tile_wall_corner_ne.png").convert("RGBA")
+    side_west = keep_box(corner_nw, (0, 0, STATIC_FRAME // 2, STATIC_FRAME))
+    side_east = keep_box(corner_ne, (STATIC_FRAME // 2, 0, STATIC_FRAME, STATIC_FRAME))
     for variant in range(1, 5):
         north = Image.open(ASSET_DIR / f"tile_wall_north_{variant}.png").convert("RGBA")
         south = Image.open(ASSET_DIR / f"tile_wall_south_{variant}.png").convert("RGBA")
         pieces = {
             "north": north,
             "south": shifted(south, dy=STATIC_FRAME // 2),
-            "west": south.rotate(-90, expand=False),
-            "east": south.rotate(90, expand=False),
+            "west": side_west,
+            "east": side_east,
         }
         for mask in range(1, 16):
             tile = Image.new("RGBA", (STATIC_FRAME, STATIC_FRAME), (0, 0, 0, 0))
