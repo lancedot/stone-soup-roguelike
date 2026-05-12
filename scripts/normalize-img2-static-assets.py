@@ -239,7 +239,7 @@ def build_wall_autotiles():
         north = Image.open(ASSET_DIR / f"tile_wall_north_{variant}.png").convert("RGBA")
         south = Image.open(ASSET_DIR / f"tile_wall_south_{variant}.png").convert("RGBA")
         pieces = {
-            "north": north,
+            "north": keep_box(north, (0, 0, STATIC_FRAME, 48)),
             "south": shifted(south, dy=STATIC_FRAME // 2),
             "west": side_west,
             "east": side_east,
