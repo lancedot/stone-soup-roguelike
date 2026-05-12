@@ -221,11 +221,20 @@ def keep_box(im: Image.Image, box) -> Image.Image:
     return out
 
 
+def side_column_from_corner(im: Image.Image, side: str) -> Image.Image:
+    half = STATIC_FRAME // 2
+    source_x = 0 if side == "west" else half
+    column = im.crop((source_x, 12, source_x + half, 52)).resize((half, STATIC_FRAME), Image.Resampling.LANCZOS)
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    out.alpha_composite(column, (source_x, 0))
+    return out
+
+
 def build_wall_autotiles():
     corner_nw = Image.open(ASSET_DIR / "tile_wall_corner_nw.png").convert("RGBA")
     corner_ne = Image.open(ASSET_DIR / "tile_wall_corner_ne.png").convert("RGBA")
-    side_west = keep_box(corner_nw, (0, 0, STATIC_FRAME // 2, STATIC_FRAME))
-    side_east = keep_box(corner_ne, (STATIC_FRAME // 2, 0, STATIC_FRAME, STATIC_FRAME))
+    side_west = side_column_from_corner(corner_nw, "west")
+    side_east = side_column_from_corner(corner_ne, "east")
     for variant in range(1, 5):
         north = Image.open(ASSET_DIR / f"tile_wall_north_{variant}.png").convert("RGBA")
         south = Image.open(ASSET_DIR / f"tile_wall_south_{variant}.png").convert("RGBA")
