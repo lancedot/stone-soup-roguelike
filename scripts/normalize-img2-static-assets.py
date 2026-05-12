@@ -94,6 +94,15 @@ def normalize_tile(cell: Image.Image, frame_size=STATIC_FRAME, pad=1, seamless=F
     return out
 
 
+def normalize_wall_block(cell: Image.Image, frame_size=STATIC_FRAME) -> Image.Image:
+    bbox = alpha_bbox(cell)
+    out = Image.new("RGBA", (frame_size, frame_size), (0, 0, 0, 0))
+    if not bbox:
+        return out
+    content = cell.crop(bbox)
+    return content.resize((frame_size, frame_size), Image.Resampling.LANCZOS)
+
+
 def save_png(im: Image.Image, path: Path, colors=128):
     if im.mode == "RGBA":
         im = im.quantize(colors=colors, method=Image.Quantize.FASTOCTREE)
@@ -168,7 +177,7 @@ def build_wall_block_variants():
             round((col + 1) * cell_w),
             round(cell_h),
         ))
-        tile = normalize_tile(cell, pad=0)
+        tile = normalize_wall_block(cell)
         save_png(tile, ASSET_DIR / f"tile_wall_{col + 1}.png", colors=128)
         if col == 0:
             save_png(tile, ASSET_DIR / "tile_wall.png", colors=128)
