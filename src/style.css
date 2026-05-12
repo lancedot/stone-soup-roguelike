@@ -24,6 +24,8 @@ h1 { font-size: 56px; margin: 0 0 12px; color: #ffe66d; text-shadow: 0 4px #5a2d
 .start { font-size: 22px; padding: 14px 28px; border-radius: 8px; border: 0; color: #2a160b; background: linear-gradient(#ffe66d, #e88f3a); font-weight: 800; }
 .hint { font-size: 14px; }
 .game { display: flex; gap: 18px; padding: 18px; align-items: flex-start; }
+.playArea { flex: none; }
+.boardViewport { width: fit-content; }
 .board { position: relative; flex: none; border: 4px solid #3c2b23; box-shadow: 0 0 0 4px #111, 0 16px 50px #000a; background: #111; overflow: hidden; }
 .tile { position: absolute; width: 64px; height: 64px; image-rendering: pixelated; }
 .sprite { position: absolute; width: 64px; height: 64px; z-index: 3; transition: left .08s linear, top .08s linear; }
@@ -69,5 +71,122 @@ kbd { background: #ffd37a; color: #1b1208; border-radius: 5px; padding: 2px 7px;
 .victoryArt { width: min(520px, 82vw); max-height: 360px; object-fit: contain; image-rendering: auto; border: 2px solid #ffd37a; background: #f8edd0; box-shadow: 0 10px 0 #0008; margin-bottom: 16px; }
 .overlay h2 { font-size: 48px; color: #ffd37a; margin: 0 0 16px; }
 .overlay button { padding: 12px 20px; border: 0; border-radius: 10px; background: #ffd37a; font-weight: 800; }
+.touchControls { display: none; }
 @media (max-width: 1600px) { .game { transform: scale(.8); transform-origin: top left; width: 125%; } }
 @media (max-width: 1220px) { .classGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) {
+  html, body { width: 100%; overflow-x: hidden; }
+  body { background: #101720; }
+  button, .board { touch-action: manipulation; }
+
+  .menu { width: 100%; padding: 18px 12px 28px; }
+  h1 { font-size: 40px; line-height: 1.05; margin-bottom: 10px; }
+  .storyIntro { padding: 12px; margin-bottom: 18px; box-shadow: inset 0 0 0 1px #c5d7ea22, 0 8px 0 #0005, 0 14px 24px #0008; }
+  .storyIntro h2 { font-size: 18px; }
+  .storyIntro article { padding: 8px 6px 10px; }
+  .storyIntro p { font-size: 14px; line-height: 1.55; }
+  .classGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+  .classGrid button { min-height: 0; padding: 10px 8px; border-radius: 8px; }
+  .classGrid img, .classPreview { width: 56px; height: 56px; margin-bottom: 7px; }
+  .classPreview { background-size: calc(56px * var(--cols)) calc(56px * var(--rows)); }
+  @keyframes class-preview-walk { from { background-position-x: 0; } to { background-position-x: -224px; } }
+  .classGrid b { font-size: 16px; margin-bottom: 5px; }
+  .classGrid span { min-height: 0; font-size: 12px; line-height: 1.35; }
+  .classGrid em { font-size: 11px; line-height: 1.3; }
+  .start { width: min(100%, 320px); min-height: 48px; font-size: 19px; }
+
+  .game {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    padding: 10px;
+    transform: none;
+  }
+  .playArea { width: 100%; }
+  .boardViewport {
+    width: calc(100vw - 20px);
+    max-width: 1280px;
+    aspect-ratio: 20 / 13;
+    overflow: hidden;
+    box-shadow: 0 8px 28px #0008;
+  }
+  .board {
+    transform: scale(calc((100vw - 20px) / 1280));
+    transform-origin: top left;
+    box-shadow: none;
+  }
+  .overlay { padding: 12px; }
+  .overlay h2 { font-size: 32px; }
+  .victoryArt { width: 82%; max-height: 46vh; }
+
+  .touchControls {
+    display: grid;
+    grid-template-columns: 156px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    margin: 12px 0;
+    padding: 10px;
+    border: 1px solid #3c465b;
+    border-radius: 8px;
+    background: #111820e8;
+    box-shadow: 0 8px 24px #0007;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(3, 48px);
+    gap: 4px;
+    justify-content: center;
+  }
+  .dpad button, .touchActions button {
+    min-height: 48px;
+    border: 1px solid #7b5c2a;
+    border-radius: 8px;
+    background: linear-gradient(#30394d, #202838);
+    color: #ffe8bd;
+    font-weight: 900;
+    box-shadow: inset 0 1px 0 #ffffff18, 0 4px 0 #090c12;
+  }
+  .dpad button { width: 48px; height: 48px; font-size: 22px; line-height: 1; }
+  .dpad .up { grid-column: 2; grid-row: 1; }
+  .dpad .left { grid-column: 1; grid-row: 2; }
+  .dpad .right { grid-column: 3; grid-row: 2; }
+  .dpad .down { grid-column: 2; grid-row: 3; }
+  .touchActions { display: grid; gap: 9px; }
+  .touchActions button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    text-align: left;
+  }
+  .touchActions b { color: #ffd37a; }
+  .touchActions span { color: #cbbfa9; font-size: 12px; }
+
+  .panel {
+    width: 100%;
+    min-height: 0;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .panel h2 { font-size: 20px; margin-top: 2px; }
+  .stats, .skillBox, .helpBox { padding: 10px; margin-bottom: 10px; }
+  .helpBox p { font-size: 12px; }
+  .inventory button { min-height: 46px; }
+  .log {
+    max-height: 156px;
+    overflow: auto;
+    padding-right: 6px;
+    font-size: 13px;
+  }
+}
+@media (max-width: 330px) {
+  .touchControls { grid-template-columns: 1fr; }
+  .dpad { grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 48px); }
+  .dpad button { width: 56px; height: 48px; }
+}

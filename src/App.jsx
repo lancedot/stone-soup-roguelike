@@ -35,6 +35,10 @@ export default function App() {
     setTimeout(() => window.scrollTo({ top: 0, left: 0 }), 0);
   };
   const apply = (fn) => setState((old) => { const next = cloneState(old); next.rng = old.rng; return fn(next); });
+  const move = (dx, dy) => apply((next) => movePlayer(next, dx, dy));
+  const triggerSkill = () => apply((next) => useSkill(next));
+  const wait = () => apply((next) => waitTurn(next));
+  const useInventoryItem = (index) => apply((next) => useItem(next, index));
 
   useEffect(() => {
     window.render_game_to_text = () => JSON.stringify({
@@ -70,16 +74,16 @@ export default function App() {
       const dirs = { arrowup: [0, -1], w: [0, -1], k: [0, -1], arrowdown: [0, 1], s: [0, 1], j: [0, 1], arrowleft: [-1, 0], a: [-1, 0], h: [-1, 0], arrowright: [1, 0], d: [1, 0], l: [1, 0] };
       if (dirs[k]) {
         e.preventDefault();
-        apply((next) => movePlayer(next, dirs[k][0], dirs[k][1]));
+        move(dirs[k][0], dirs[k][1]);
       } else if (k >= '1' && k <= '8') {
         e.preventDefault();
-        apply((next) => useItem(next, Number(k) - 1));
+        useInventoryItem(Number(k) - 1);
       } else if (k === 'q') {
         e.preventDefault();
-        apply((next) => useSkill(next));
+        triggerSkill();
       } else if (k === '.' || k === ' ') {
         e.preventDefault();
-        apply((next) => waitTurn(next));
+        wait();
       } else if (k === 'r') {
         e.preventDefault();
         returnToMenu();
@@ -139,27 +143,38 @@ export default function App() {
   }
 
   return <main className="game">
-    <section className="board" style={{ width: state.map.width * TILE_SIZE, height: state.map.height * TILE_SIZE }}>
-      {state.map.tiles.flatMap((row, y) => row.map((tile, x) => <Tile key={`${x},${y}`} map={state.map} tile={tile} x={x} y={y} />))}
-      {state.items.map((item) => <Sprite key={item.uid} entity={item} />)}
-      {state.summons.map((summon) => <Sprite key={summon.id} entity={summon} hp summon />)}
-      {state.enemies.map((enemy, i) => <Sprite key={`${enemy.id}-${i}-${enemy.x}-${enemy.y}`} entity={enemy} hp />)}
-      <Sprite entity={state.player} player />
-      {(state.fx ?? []).map((fx) => <Sprite key={fx.id} entity={fx} fx />)}
-      {state.status !== 'playing' && <div className="overlay">
-        {state.status === 'won' && <VictoryArt classId={state.player.classId} />}
-        <h2>{state.status === 'won' ? '夺回安眠圣杯！' : '你睡过去了'}</h2>
-        <button onClick={() => restart(classId)}>再来一局</button>
-      </div>}
-    </section>
+    <div className="playArea">
+      <div className="boardViewport">
+        <section className="board" style={{ width: state.map.width * TILE_SIZE, height: state.map.height * TILE_SIZE }}>
+          {state.map.tiles.flatMap((row, y) => row.map((tile, x) => <Tile key={`${x},${y}`} map={state.map} tile={tile} x={x} y={y} />))}
+          {state.items.map((item) => <Sprite key={item.uid} entity={item} />)}
+          {state.summons.map((summon) => <Sprite key={summon.id} entity={summon} hp summon />)}
+          {state.enemies.map((enemy, i) => <Sprite key={`${enemy.id}-${i}-${enemy.x}-${enemy.y}`} entity={enemy} hp />)}
+          <Sprite entity={state.player} player />
+          {(state.fx ?? []).map((fx) => <Sprite key={fx.id} entity={fx} fx />)}
+          {state.status !== 'playing' && <div className="overlay">
+            {state.status === 'won' && <VictoryArt classId={state.player.classId} />}
+            <h2>{state.status === 'won' ? '夺回安眠圣杯！' : '你睡过去了'}</h2>
+            <button onClick={() => restart(classId)}>再来一局</button>
+          </div>}
+        </section>
+      </div>
+      <TouchControls
+        disabled={state.status !== 'playing'}
+        skill={state.player.skill}
+        onMove={move}
+        onSkill={triggerSkill}
+        onWait={wait}
+      />
+    </div>
     <aside className="panel">
       <h2>安眠圣域 第 {state.depth} 层</h2>
       <Stats p={state.player} />
-      <SkillBox skill={state.player.skill} effects={state.player.effects} onUse={() => apply((next) => useSkill(next))} />
-      <button className="waitButton" onClick={() => apply((next) => waitTurn(next))}>等待 <kbd>空格</kbd><kbd>.</kbd></button>
+      <SkillBox skill={state.player.skill} effects={state.player.effects} onUse={triggerSkill} />
+      <button className="waitButton" onClick={wait}>等待 <kbd>空格</kbd><kbd>.</kbd></button>
       <HelpBox />
       <h3>背包</h3>
-      <div className="inventory">{state.player.inventory.length === 0 ? <em>空</em> : state.player.inventory.map((item, i) => <button key={item.uid} title={item.desc} onClick={() => apply((next) => useItem(next, i))}><span>{i + 1}</span><img src={sprites[item.sprite]} alt={item.name} /><strong>{item.name}<small>{item.desc}</small></strong></button>)}</div>
+      <div className="inventory">{state.player.inventory.length === 0 ? <em>空</em> : state.player.inventory.map((item, i) => <button key={item.uid} title={item.desc} onClick={() => useInventoryItem(i)}><span>{i + 1}</span><img src={sprites[item.sprite]} alt={item.name} /><strong>{item.name}<small>{item.desc}</small></strong></button>)}</div>
       <h3>日志</h3>
       <ul className="log">{state.log.map((l, i) => <li key={i}>{l}</li>)}</ul>
     </aside>
@@ -170,11 +185,38 @@ function HelpBox() {
   return <div className="helpBox">
     <h3>操作说明</h3>
     <p><kbd>方向键</kbd> / <kbd>WASD</kbd> 移动；撞到敌人会近战攻击。</p>
+    <p>手机端使用屏幕下方方向键移动，技能和等待也有触摸按钮。</p>
     <p><kbd>Q</kbd> 使用职业技能；成功才消耗回合。</p>
     <p><kbd>1-8</kbd> 使用背包道具；道具是瞬间动作。</p>
     <p>站到 <b>&gt;</b> 楼梯上下楼；第 4 层打倒失眠魔王获胜。</p>
     <p><kbd>R</kbd> 回到选角；死亡后可以立刻再来。</p>
   </div>;
+}
+
+function TouchControls({ disabled, skill, onMove, onSkill, onWait }) {
+  const press = (fn) => (event) => {
+    event.preventDefault();
+    if (!disabled) fn();
+  };
+  const skillDisabled = disabled || skill.remaining > 0;
+  return <nav className="touchControls" aria-label="触摸操作">
+    <div className="dpad" aria-label="移动方向">
+      <button type="button" className="up" aria-label="向上移动" disabled={disabled} onPointerDown={press(() => onMove(0, -1))}>↑</button>
+      <button type="button" className="left" aria-label="向左移动" disabled={disabled} onPointerDown={press(() => onMove(-1, 0))}>←</button>
+      <button type="button" className="right" aria-label="向右移动" disabled={disabled} onPointerDown={press(() => onMove(1, 0))}>→</button>
+      <button type="button" className="down" aria-label="向下移动" disabled={disabled} onPointerDown={press(() => onMove(0, 1))}>↓</button>
+    </div>
+    <div className="touchActions">
+      <button type="button" disabled={skillDisabled} onPointerDown={press(onSkill)}>
+        <b>技能</b>
+        <span>{skill.remaining > 0 ? `冷却 ${skill.remaining}` : '可用'}</span>
+      </button>
+      <button type="button" disabled={disabled} onPointerDown={press(onWait)}>
+        <b>等待</b>
+        <span>一回合</span>
+      </button>
+    </div>
+  </nav>;
 }
 
 function SpritePreview({ spriteId, label }) {
